@@ -148,25 +148,22 @@ export interface Thread {
 /**
  * 表示するフォルダ。
  * 'home' は概要（ホーム）、'contacts' はアドレス帳で、どちらもスレッド一覧を出さない。
+ * 'mailbox' は送受信を区別せず、すべてのスレッドを 1 つの一覧にまとめる。
  */
-export type Folder = 'home' | 'inbox' | 'sent' | 'drafts' | 'all' | 'contacts';
+export type Folder = 'home' | 'mailbox' | 'drafts' | 'contacts';
 
 export const FOLDER_LABELS: Readonly<Record<Folder, string>> = {
   home: 'ホーム',
-  inbox: '受信箱',
-  sent: '送信済み',
+  mailbox: 'メールボックス',
   drafts: '下書き',
-  all: '全件',
   contacts: 'アドレス帳',
 };
 
 /** 表示順に並べたフォルダ */
 export const FOLDERS: readonly Folder[] = [
   'home',
-  'inbox',
-  'sent',
+  'mailbox',
   'drafts',
-  'all',
   'contacts',
 ];
 

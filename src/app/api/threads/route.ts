@@ -13,7 +13,7 @@ import {
 import { FOLDERS, type Folder } from '@/types/mail';
 
 const parseFolder = (value: string | null): Folder =>
-  FOLDERS.find((folder) => folder === value) ?? 'inbox';
+  FOLDERS.find((folder) => folder === value) ?? 'mailbox';
 
 export const GET = async (request: NextRequest): Promise<NextResponse> => {
   try {

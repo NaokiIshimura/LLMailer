@@ -67,27 +67,21 @@ export const buildThread = (
   };
 };
 
-const matchesFolder = (folder: Folder, messages: readonly Message[]): boolean => {
+/** スレッド一覧を出すフォルダか */
+const showsThreads = (folder: Folder): boolean => {
   switch (folder) {
     case 'home':
       // ホームは最近のやり取りを見せるので、全スレッドを対象にする
       return true;
-    case 'inbox':
-      return messages.some(
-        (message) =>
-          message.status === 'received' ||
-          message.status === 'pending' ||
-          message.status === 'failed'
-      );
-    case 'sent':
-      return messages.some((message) => message.status === 'sent');
+    case 'mailbox':
+      // 送受信を区別せず、下書き以外のやり取りをまとめて見せる
+      return true;
     case 'drafts':
+      // 下書きはスレッドではなくメッセージ単位で並べる
       return false;
     case 'contacts':
       // アドレス帳はスレッドを表示しない
       return false;
-    case 'all':
-      return true;
   }
 };
 
@@ -110,16 +104,17 @@ const byLastMessageAtDesc = (a: Thread, b: Thread): number =>
 export const buildThreads = (
   messages: readonly Message[],
   options: { readonly folder: Folder; readonly query?: string } = {
-    folder: 'all',
+    folder: 'mailbox',
   }
 ): readonly Thread[] => {
   const { folder, query = '' } = options;
   const threads: Thread[] = [];
 
+  if (!showsThreads(folder)) {
+    return threads;
+  }
+
   for (const [threadId, threadMessages] of groupByThread(messages)) {
-    if (!matchesFolder(folder, threadMessages)) {
-      continue;
-    }
     if (!matchesQuery(query, threadMessages)) {
       continue;
     }
@@ -139,7 +134,7 @@ export const buildDrafts = (
     .filter((message) => matchesQuery(query, [message]))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
-/** 受信箱の未読件数 */
+/** メールボックスの未読件数 */
 export const countUnread = (messages: readonly Message[]): number =>
   messages.filter((message) => message.status === 'received' && !message.read)
     .length;

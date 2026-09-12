@@ -24,7 +24,7 @@ interface HomeViewProps {
   readonly onCompose: (to?: readonly string[]) => void;
 }
 
-/** 受信箱などに入る前の概要画面 */
+/** メールボックスなどに入る前の概要画面 */
 export const HomeView = ({
   threads,
   agents,
@@ -47,8 +47,13 @@ export const HomeView = ({
     readonly folder: Folder;
     readonly accent?: boolean;
   }[] = [
-    { label: '未読', count: unreadCount, folder: 'inbox', accent: unreadCount > 0 },
-    { label: '対応中', count: pendingCount, folder: 'inbox' },
+    {
+      label: '未読',
+      count: unreadCount,
+      folder: 'mailbox',
+      accent: unreadCount > 0,
+    },
+    { label: '対応中', count: pendingCount, folder: 'mailbox' },
     { label: '下書き', count: draftCount, folder: 'drafts' },
     { label: 'エージェント', count: agents.length, folder: 'contacts' },
   ];

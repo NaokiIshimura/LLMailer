@@ -38,7 +38,14 @@ export const Mailbox = () => {
 
   const agents = useAgents();
   const threads = useThreads();
-  const detail = useThreadDetail(selectedThreadId, threads.reload);
+  /** スレッド本文を表示するフォルダか（ホームとアドレス帳では表示しない） */
+  const threadPaneVisible =
+    threads.folder !== 'home' && threads.folder !== 'contacts';
+  const detail = useThreadDetail(
+    selectedThreadId,
+    threads.reload,
+    threadPaneVisible
+  );
   const sender = useSendMessage();
   const compose = useCompose(threads.reload);
 

@@ -21,10 +21,14 @@ export interface UseThreadDetailResult {
 /**
  * 選択中スレッドのメッセージを取得し、開いたタイミングで既読にする。
  * 既読化のあとに onRead を呼び、一覧側の未読件数を更新させる。
+ *
+ * visible が false のあいだ（本文を表示しないホームやアドレス帳）は既読にしない。
+ * 読んでいないメッセージが既読になり、未読件数に出なくなるのを防ぐ。
  */
 export const useThreadDetail = (
   threadId: string | null,
-  onRead: () => void
+  onRead: () => void,
+  visible: boolean
 ): UseThreadDetailResult => {
   const resource = useJsonResource<ThreadDetailResponse>(
     threadId === null ? null : `/api/threads/${threadId}`
@@ -52,7 +56,7 @@ export const useThreadDetail = (
   const alreadyMarked = markKey !== null && markedKeys.includes(markKey);
 
   useEffect(() => {
-    if (threadId === null || markKey === null || unreadCount === 0) {
+    if (!visible || threadId === null || markKey === null || unreadCount === 0) {
       return;
     }
     if (alreadyMarked) {
@@ -84,7 +88,7 @@ export const useThreadDetail = (
     return () => {
       cancelled = true;
     };
-  }, [threadId, markKey, unreadCount, alreadyMarked]);
+  }, [visible, threadId, markKey, unreadCount, alreadyMarked]);
 
   const messages = useMemo((): readonly Message[] => {
     const list = loaded?.messages ?? [];

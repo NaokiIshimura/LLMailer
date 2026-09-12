@@ -1,3 +1,4 @@
+export { AgentEditor } from './AgentEditor';
 export { ComposeWindow } from './ComposeWindow';
 export { ContactList } from './ContactList';
 export { ContactView } from './ContactView';

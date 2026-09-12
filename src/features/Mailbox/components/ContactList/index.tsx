@@ -1,6 +1,8 @@
 'use client';
 
+import { isDefaultAgentAddress } from '@/lib/agents/defaultAgents';
 import type { Agent } from '@/types/mail';
+import { Icon } from '../Icon';
 import { PermissionBadge } from '../PermissionBadge';
 import styles from './ContactList.module.css';
 
@@ -10,6 +12,7 @@ interface ContactListProps {
   readonly query: string;
   readonly onChangeQuery: (query: string) => void;
   readonly onSelect: (address: string) => void;
+  readonly onCreate: () => void;
 }
 
 const matches = (agent: Agent, query: string): boolean => {
@@ -29,6 +32,7 @@ export const ContactList = ({
   query,
   onChangeQuery,
   onSelect,
+  onCreate,
 }: ContactListProps) => {
   const shown = agents.filter((agent) => matches(agent, query));
 
@@ -42,6 +46,10 @@ export const ContactList = ({
           value={query}
           onChange={(event) => onChangeQuery(event.target.value)}
         />
+        <button type="button" className={styles.addButton} onClick={onCreate}>
+          <Icon name="plus" size={15} />
+          追加
+        </button>
       </div>
 
       <div className={styles.items}>
@@ -61,6 +69,9 @@ export const ContactList = ({
             <div className={styles.topRow}>
               <span className={styles.name}>{agent.name}</span>
               <PermissionBadge agent={agent} />
+              {isDefaultAgentAddress(agent.address) && (
+                <span className={styles.defaultTag}>既定</span>
+              )}
             </div>
             <div className={styles.address}>{agent.address}</div>
             {agent.description && (

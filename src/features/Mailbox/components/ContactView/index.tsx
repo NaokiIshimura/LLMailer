@@ -1,5 +1,6 @@
 'use client';
 
+import { isDefaultAgentAddress } from '@/lib/agents/defaultAgents';
 import { isFullAccessAgent, type Agent } from '@/types/mail';
 import { Icon } from '../Icon';
 import { PermissionBadge } from '../PermissionBadge';
@@ -7,7 +8,10 @@ import styles from './ContactView.module.css';
 
 interface ContactViewProps {
   readonly agent: Agent | null;
+  readonly deleting: boolean;
   readonly onCompose: (to: readonly string[]) => void;
+  readonly onEdit: (agent: Agent) => void;
+  readonly onDelete: (agent: Agent) => void;
 }
 
 const formatTimeout = (timeoutMs?: number): string =>
@@ -16,7 +20,13 @@ const formatTimeout = (timeoutMs?: number): string =>
     : `${Math.round(timeoutMs / 1000)} 秒`;
 
 /** アドレス帳で選んだエージェントの詳細 */
-export const ContactView = ({ agent, onCompose }: ContactViewProps) => {
+export const ContactView = ({
+  agent,
+  deleting,
+  onCompose,
+  onEdit,
+  onDelete,
+}: ContactViewProps) => {
   if (!agent) {
     return (
       <section className={styles.view}>
@@ -28,6 +38,8 @@ export const ContactView = ({ agent, onCompose }: ContactViewProps) => {
   }
 
   const fullAccess = isFullAccessAgent(agent);
+  // 既定のエージェントはアプリの土台なので、画面からは変更・削除させない
+  const isDefault = isDefaultAgentAddress(agent.address);
 
   return (
     <section className={styles.view}>
@@ -36,17 +48,41 @@ export const ContactView = ({ agent, onCompose }: ContactViewProps) => {
           <h1 className={styles.title}>
             {agent.name}
             <PermissionBadge agent={agent} />
+            {isDefault && <span className={styles.defaultTag}>既定</span>}
           </h1>
           <p className={styles.address}>{agent.address}</p>
         </div>
-        <button
-          type="button"
-          className={styles.composeButton}
-          onClick={() => onCompose([agent.address])}
-        >
-          <Icon name="mail" size={16} />
-          メールを書く
-        </button>
+        <div className={styles.actions}>
+          <button
+            type="button"
+            className={styles.composeButton}
+            onClick={() => onCompose([agent.address])}
+          >
+            <Icon name="mail" size={16} />
+            メールを書く
+          </button>
+          {!isDefault && (
+            <>
+              <button
+                type="button"
+                className={styles.actionButton}
+                onClick={() => onEdit(agent)}
+              >
+                <Icon name="edit" size={15} />
+                編集
+              </button>
+              <button
+                type="button"
+                className={`${styles.actionButton} ${styles.deleteButton}`}
+                onClick={() => onDelete(agent)}
+                disabled={deleting}
+              >
+                <Icon name="trash" size={15} />
+                削除
+              </button>
+            </>
+          )}
+        </div>
       </header>
 
       <div className={styles.body}>
@@ -131,7 +167,9 @@ export const ContactView = ({ agent, onCompose }: ContactViewProps) => {
         )}
 
         <p className={styles.hint}>
-          エージェントの追加・変更は <code>data/agents.json</code> を編集してください。
+          {isDefault
+            ? '既定のエージェントのため、画面からは変更・削除できません。'
+            : '編集で変えられない項目（許可ツールなど）は data/agents.json で調整できます。'}
         </p>
       </div>
     </section>

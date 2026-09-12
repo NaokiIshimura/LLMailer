@@ -5,11 +5,13 @@ import { toThreadExchanges } from '@/lib/thread';
 import {
   ME_ADDRESS,
   NO_SUBJECT,
+  type Agent,
   type Message,
   type SendMessageResponse,
   type Thread,
 } from '@/types/mail';
 import {
+  AgentEditor,
   ComposeWindow,
   ContactList,
   ContactView,
@@ -21,6 +23,7 @@ import {
   ThreadView,
 } from './components';
 import {
+  useAgentEditor,
   useAgents,
   useCancelFailedMessage,
   useCompose,
@@ -55,6 +58,7 @@ export const Mailbox = () => {
   const sender = useSendMessage();
   const canceler = useCancelFailedMessage();
   const compose = useCompose(threads.reload);
+  const agentEditor = useAgentEditor(agents.reload);
   useTheme();
 
   const displayName = useCallback(
@@ -283,6 +287,29 @@ export const Mailbox = () => {
     [compose]
   );
 
+  /** 追加・変更したエージェントは、そのまま詳細で確認できるように選択しておく */
+  const handleSaveAgent = useCallback(async () => {
+    const saved = await agentEditor.save();
+    if (saved) {
+      setSelectedAddress(saved.address);
+    }
+  }, [agentEditor]);
+
+  const handleDeleteAgent = useCallback(
+    async (target: Agent) => {
+      const confirmed = window.confirm(
+        `${target.name}（${target.address}）を削除しますか？\n送受信済みのメールは残ります。`
+      );
+      if (!confirmed) {
+        return;
+      }
+
+      if (await agentEditor.remove(target.address)) {
+        setSelectedAddress(null);
+      }
+    },
+    [agentEditor]
+  );
 
   return (
     <div className={styles.app}>
@@ -307,6 +334,10 @@ export const Mailbox = () => {
 
       {agents.error && <p className={styles.notice}>{agents.error}</p>}
       {canceler.error && <p className={styles.notice}>{canceler.error}</p>}
+      {/* 編集フォームを開いていないときの失敗（削除など）はヘッダー下に出す */}
+      {agentEditor.error && !agentEditor.form && (
+        <p className={styles.notice}>{agentEditor.error}</p>
+      )}
 
       <div className={styles.panes}>
         <FolderSidebar
@@ -340,8 +371,15 @@ export const Mailbox = () => {
               query={threads.query}
               onChangeQuery={threads.changeQuery}
               onSelect={setSelectedAddress}
+              onCreate={agentEditor.openNew}
             />
-            <ContactView agent={selectedAgent} onCompose={compose.openNew} />
+            <ContactView
+              agent={selectedAgent}
+              deleting={agentEditor.deleting}
+              onCompose={compose.openNew}
+              onEdit={agentEditor.openEdit}
+              onDelete={handleDeleteAgent}
+            />
           </>
         ) : (
           <>
@@ -388,6 +426,17 @@ export const Mailbox = () => {
           onSend={handleSend}
           onSaveDraft={() => void compose.saveDraft()}
           onClose={compose.close}
+        />
+      )}
+
+      {agentEditor.form && (
+        <AgentEditor
+          form={agentEditor.form}
+          saving={agentEditor.saving}
+          error={agentEditor.error}
+          onChange={agentEditor.update}
+          onSave={() => void handleSaveAgent()}
+          onClose={agentEditor.close}
         />
       )}
 

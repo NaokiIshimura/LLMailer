@@ -231,14 +231,14 @@ export const FOLDER_LABELS: Readonly<Record<Folder, string>> = {
   settings: '設定',
 };
 
+/** メールの一覧を出すフォルダ（サイドバーで宛先一覧より上に並べる） */
+export const MAIL_FOLDERS: readonly Folder[] = ['home', 'mailbox', 'drafts'];
+
+/** メール以外の画面（サイドバーで宛先一覧より下に並べる） */
+export const TOOL_FOLDERS: readonly Folder[] = ['contacts', 'settings'];
+
 /** 表示順に並べたフォルダ */
-export const FOLDERS: readonly Folder[] = [
-  'home',
-  'mailbox',
-  'drafts',
-  'contacts',
-  'settings',
-];
+export const FOLDERS: readonly Folder[] = [...MAIL_FOLDERS, ...TOOL_FOLDERS];
 
 /** スレッドの一覧と本文を出すフォルダか（ホーム・アドレス帳・設定は専用の画面を出す） */
 export const isThreadPaneFolder = (folder: Folder): boolean =>

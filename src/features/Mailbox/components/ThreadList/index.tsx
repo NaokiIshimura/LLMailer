@@ -4,10 +4,13 @@ import { formatListDate } from '@/lib/format';
 import type { Agent, Folder, Message, Thread } from '@/types/mail';
 import { Icon } from '../Icon';
 import { Spinner } from '../Loader';
+import { PermissionBadge } from '../PermissionBadge';
 import styles from './ThreadList.module.css';
 
 interface ThreadListProps {
   readonly folder: Folder;
+  /** 宛先で絞り込んでいるエージェント（絞り込んでいなければ null） */
+  readonly agent: Agent | null;
   readonly threads: readonly Thread[];
   readonly drafts: readonly Message[];
   readonly agents: readonly Agent[];
@@ -17,15 +20,17 @@ interface ThreadListProps {
   readonly error: string | null;
   readonly onChangeQuery: (query: string) => void;
   readonly onSelectThread: (threadId: string) => void;
+  readonly onCompose: (to?: readonly string[]) => void;
   readonly onSelectDraft: (draft: Message) => void;
   readonly onDeleteDraft: (draft: Message) => void;
   /** 下書きの削除リクエスト中か */
   readonly deletingDraft: boolean;
 }
 
-/** スレッド一覧（下書きフォルダでは下書き一覧） */
+/** スレッド一覧（下書きフォルダでは下書き一覧、宛先を選んでいればその宛先のメール一覧） */
 export const ThreadList = ({
   folder,
+  agent,
   threads,
   drafts,
   agents,
@@ -35,15 +40,36 @@ export const ThreadList = ({
   error,
   onChangeQuery,
   onSelectThread,
+  onCompose,
   onSelectDraft,
   onDeleteDraft,
   deletingDraft,
 }: ThreadListProps) => {
   const nameOf = (agentId: string): string =>
-    agents.find((agent) => agent.id === agentId)?.name ?? '不明なエージェント';
+    agents.find((item) => item.id === agentId)?.name ?? '不明なエージェント';
 
   return (
     <section className={styles.list}>
+      {/* 宛先で絞り込んでいるときは、どの宛先の一覧かを見出しに出す */}
+      {agent && (
+        <div className={styles.agentHeader}>
+          <div className={styles.agentHeading}>
+            <span className={styles.agentName}>{agent.name}</span>
+            <PermissionBadge agent={agent} />
+          </div>
+          {/* 宛先は見出しに出ているので、ボタンは短い文言にして名前の表示幅を残す */}
+          <button
+            type="button"
+            className={styles.composeButton}
+            onClick={() => onCompose([agent.id])}
+            title={`${agent.name}にメールを書く`}
+          >
+            <Icon name="mail" size={14} />
+            新規作成
+          </button>
+        </div>
+      )}
+
       <div className={styles.searchRow}>
         <input
           type="search"
@@ -69,7 +95,11 @@ export const ThreadList = ({
         )}
 
         {!loading && !error && folder !== 'drafts' && threads.length === 0 && (
-          <p className={styles.empty}>メッセージはありません</p>
+          <p className={styles.empty}>
+            {agent
+              ? `${agent.name}とのやり取りはありません`
+              : 'メッセージはありません'}
+          </p>
         )}
 
         {folder === 'drafts'

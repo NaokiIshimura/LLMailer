@@ -99,14 +99,27 @@ const matchesQuery = (query: string, messages: readonly Message[]): boolean => {
 const byLastMessageAtDesc = (a: Thread, b: Thread): number =>
   b.lastMessageAt.localeCompare(a.lastMessageAt);
 
-/** フォルダと検索条件でスレッド一覧を導出する */
+/** 指定した宛先とのやり取りを含むスレッドか */
+const matchesAgent = (
+  agentId: string | undefined,
+  messages: readonly Message[]
+): boolean =>
+  !agentId ||
+  messages.some((message) => message.agentIds.includes(agentId));
+
+/** フォルダ・宛先・検索条件でスレッド一覧を導出する */
 export const buildThreads = (
   messages: readonly Message[],
-  options: { readonly folder: Folder; readonly query?: string } = {
+  options: {
+    readonly folder: Folder;
+    readonly query?: string;
+    /** 指定するとその宛先とのやり取りだけに絞る */
+    readonly agentId?: string;
+  } = {
     folder: 'mailbox',
   }
 ): readonly Thread[] => {
-  const { folder, query = '' } = options;
+  const { folder, query = '', agentId } = options;
   const threads: Thread[] = [];
 
   if (!showsThreads(folder)) {
@@ -114,7 +127,7 @@ export const buildThreads = (
   }
 
   for (const [threadId, threadMessages] of groupByThread(messages)) {
-    if (!matchesQuery(query, threadMessages)) {
+    if (!matchesQuery(query, threadMessages) || !matchesAgent(agentId, threadMessages)) {
       continue;
     }
     threads.push(buildThread(threadId, threadMessages));
@@ -137,6 +150,22 @@ export const buildDrafts = (
 export const countUnread = (messages: readonly Message[]): number =>
   messages.filter((message) => message.status === 'received' && !message.read)
     .length;
+
+/** 宛先ごとの未読件数（サイドバーの宛先一覧に出す） */
+export const countUnreadByAgent = (
+  messages: readonly Message[]
+): Readonly<Record<string, number>> => {
+  const counts: Record<string, number> = {};
+  for (const message of messages) {
+    if (message.status !== 'received' || message.read) {
+      continue;
+    }
+    for (const agentId of message.agentIds) {
+      counts[agentId] = (counts[agentId] ?? 0) + 1;
+    }
+  }
+  return counts;
+};
 
 /** 対応中（応答待ち）の件数 */
 export const countPending = (messages: readonly Message[]): number =>

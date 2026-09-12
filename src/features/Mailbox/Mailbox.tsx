@@ -77,6 +77,10 @@ export const Mailbox = () => {
     agents.agents[0] ??
     null;
 
+  /** サイドバーで宛先ごとの一覧を開いているエージェント */
+  const listedAgent =
+    agents.agents.find((agent) => agent.id === threads.agentId) ?? null;
+
   const selectThread = useCallback((threadId: string) => {
     setSelectedThreadId(threadId);
   }, []);
@@ -167,8 +171,11 @@ export const Mailbox = () => {
     // 配信の完了を待たずに作成ウィンドウを閉じ、送信先のスレッドを開く
     compose.close();
     setSelectedThreadId(threadId);
-    // 送信したやり取りがそのまま見えるよう、どのフォルダからでもメールボックスへ移る
-    if (threads.folder !== 'mailbox') {
+    // 送信したやり取りがそのまま見えるよう、一覧に出ないフォルダ・宛先からはメールボックスへ移る
+    const listed =
+      threads.folder === 'mailbox' &&
+      (threads.agentId === null || draft.agentIds.includes(threads.agentId));
+    if (!listed) {
       threads.selectFolder('mailbox');
     }
 
@@ -374,10 +381,13 @@ export const Mailbox = () => {
       <div className={styles.panes}>
         <FolderSidebar
           folder={threads.folder}
+          selectedAgentId={threads.agentId}
+          agents={agents.agents}
           unreadCount={threads.unreadCount}
           draftCount={threads.draftCount}
-          agentCount={agents.agents.length}
+          agentUnreadCounts={threads.agentUnreadCounts}
           onSelectFolder={threads.selectFolder}
+          onSelectAgent={threads.selectAgent}
           onCompose={compose.openNew}
         />
 
@@ -422,6 +432,7 @@ export const Mailbox = () => {
           <>
             <ThreadList
               folder={threads.folder}
+              agent={listedAgent}
               threads={shownThreads}
               drafts={threads.drafts}
               agents={agents.agents}
@@ -431,6 +442,7 @@ export const Mailbox = () => {
               error={threads.error}
               onChangeQuery={threads.changeQuery}
               onSelectThread={selectThread}
+              onCompose={compose.openNew}
               onSelectDraft={handleSelectDraft}
               onDeleteDraft={(draftMessage) =>
                 void handleDeleteDraft(draftMessage)

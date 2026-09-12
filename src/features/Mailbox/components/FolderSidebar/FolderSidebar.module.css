@@ -50,6 +50,13 @@
   font-weight: 700;
 }
 
+/* 宛先の名前は長くなりがちなので、幅に収まらない分は省略する */
+.agentName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .separator {
   margin: 8px 4px;
   border: none;

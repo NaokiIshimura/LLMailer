@@ -6,6 +6,48 @@
   overflow: hidden;
 }
 
+/* 宛先ごとの一覧の見出し（どの宛先を見ているかと、その宛先への新規作成） */
+.agentHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.agentHeading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  /* 名前が長くても新規作成ボタンを押し出さない */
+  min-width: 0;
+}
+
+.agentName {
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composeButton {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  padding: 5px 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 12px;
+}
+
+.composeButton:hover {
+  background: var(--color-accent-weak);
+  color: var(--color-accent);
+}
+
 .searchRow {
   padding: 10px 12px;
   border-bottom: 1px solid var(--color-border);

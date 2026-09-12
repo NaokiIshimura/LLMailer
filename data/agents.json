@@ -131,5 +131,36 @@
       "project",
       "local"
     ]
+  },
+  {
+    "name": "test",
+    "model": "haiku",
+    "description": "テストエージェント",
+    "workingDirectory": ".",
+    "permissionMode": "manual",
+    "allowedTools": [
+      "Read",
+      "Glob",
+      "Grep",
+      "WebSearch",
+      "WebFetch"
+    ],
+    "disallowedTools": [
+      "Write",
+      "Edit",
+      "MultiEdit",
+      "NotebookEdit",
+      "Bash",
+      "BashOutput",
+      "KillShell",
+      "KillBash",
+      "Task"
+    ],
+    "settingSources": [
+      "project",
+      "local"
+    ],
+    "timeoutMs": 300000,
+    "address": "test@test"
   }
 ]

@@ -13,8 +13,24 @@ export type PermissionMode =
   | 'bypassPermissions'
   | 'plan';
 
+/** 指定できる権限モード（リクエストの検証にも使う） */
+export const PERMISSION_MODES: readonly PermissionMode[] = [
+  'manual',
+  'acceptEdits',
+  'auto',
+  'dontAsk',
+  'bypassPermissions',
+  'plan',
+];
+
 /** Claude Code が読み込む設定ソース */
 export type SettingSource = 'user' | 'project' | 'local';
+
+export const SETTING_SOURCES: readonly SettingSource[] = [
+  'user',
+  'project',
+  'local',
+];
 
 /** 宛先となる AI エージェント（ローカルの Claude Code を 1 プロセス起動する単位） */
 export interface Agent {
@@ -78,6 +94,45 @@ export const isFullAccessAgent = (agent: Agent): boolean => {
   const writeDenied = (agent.disallowedTools ?? []).includes('Write');
   return permissive && !writeDenied;
 };
+
+/**
+ * 画面から選べる権限のプリセット。
+ *
+ * Claude Code の権限指定は permissionMode・allowedTools・disallowedTools・
+ * settingSources の組み合わせで決まり、単独では読み取り専用を担保できない。
+ * 取り違えると意図せずファイルを書き換えられてしまうため、
+ * 画面ではこの 2 つのプリセットからだけ選ばせる。
+ */
+export type AgentAccess = 'full' | 'readOnly';
+
+export const AGENT_ACCESS_LABELS: Readonly<Record<AgentAccess, string>> = {
+  full: 'フル権限（ファイル変更・コマンド実行）',
+  readOnly: '読み取り専用（読み取りと検索のみ）',
+};
+
+/** 表示順に並べた権限プリセット */
+export const AGENT_ACCESSES: readonly AgentAccess[] = ['readOnly', 'full'];
+
+/** エージェントの権限に関わる設定 */
+export type AgentPermission = Pick<
+  Agent,
+  'permissionMode' | 'allowedTools' | 'disallowedTools' | 'settingSources'
+>;
+
+/** プリセットから、Claude Code に渡す権限設定を組み立てる */
+export const toAgentPermission = (access: AgentAccess): AgentPermission =>
+  access === 'full'
+    ? { permissionMode: 'bypassPermissions' }
+    : {
+        permissionMode: 'manual',
+        allowedTools: READ_ONLY_TOOLS,
+        disallowedTools: DENY_WRITE_TOOLS,
+        settingSources: ['project', 'local'],
+      };
+
+/** 既存のエージェントがどちらのプリセットに当たるか */
+export const toAgentAccess = (agent: Agent): AgentAccess =>
+  isFullAccessAgent(agent) ? 'full' : 'readOnly';
 
 /** メッセージの配信状態 */
 export type MessageStatus =
@@ -189,6 +244,15 @@ export interface SendMessageResponse {
   readonly sent: Message;
   readonly pending: readonly Message[];
 }
+
+/** POST /api/agents のリクエストボディ */
+export type CreateAgentRequest = Agent;
+
+/**
+ * PUT /api/agents/[address] のリクエストボディ。
+ * アドレスは送受信済みメッセージから参照される識別子なので、後から変更しない。
+ */
+export type UpdateAgentRequest = Omit<Agent, 'address'>;
 
 /** 下書き保存のリクエストボディ */
 export interface SaveDraftRequest {

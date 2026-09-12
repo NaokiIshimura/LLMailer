@@ -1,3 +1,8 @@
+export {
+  useAgentEditor,
+  type AgentForm,
+  type UseAgentEditorResult,
+} from './useAgentEditor';
 export { useAgents, type UseAgentsResult } from './useAgents';
 export {
   useCancelFailedMessage,

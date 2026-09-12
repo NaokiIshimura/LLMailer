@@ -11,6 +11,8 @@ export interface UseAgentsResult {
   readonly agents: readonly Agent[];
   readonly loading: boolean;
   readonly error: string | null;
+  /** 追加・変更・削除のあとに取り直す */
+  readonly reload: () => void;
 }
 
 /** アドレス帳（エージェント一覧）を取得する */
@@ -21,5 +23,6 @@ export const useAgents = (): UseAgentsResult => {
     agents: resource.data?.agents ?? [],
     loading: resource.loading,
     error: resource.error,
+    reload: resource.reload,
   };
 };

@@ -35,7 +35,7 @@ const buildUrl = (folder: Folder, query: string): string => {
 
 /** フォルダ・検索条件に応じたスレッド一覧を取得する */
 export const useThreads = (): UseThreadsResult => {
-  const [folder, setFolder] = useState<Folder>('inbox');
+  const [folder, setFolder] = useState<Folder>('home');
   const [query, setQuery] = useState('');
   const resource = useJsonResource<ThreadsResponse>(buildUrl(folder, query));
 

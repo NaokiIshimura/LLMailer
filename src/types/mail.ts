@@ -140,10 +140,14 @@ export interface Thread {
   readonly hasFailure: boolean;
 }
 
-/** 表示するフォルダ（'contacts' はスレッドではなくアドレス帳を表示する） */
-export type Folder = 'inbox' | 'sent' | 'drafts' | 'all' | 'contacts';
+/**
+ * 表示するフォルダ。
+ * 'home' は概要（ホーム）、'contacts' はアドレス帳で、どちらもスレッド一覧を出さない。
+ */
+export type Folder = 'home' | 'inbox' | 'sent' | 'drafts' | 'all' | 'contacts';
 
 export const FOLDER_LABELS: Readonly<Record<Folder, string>> = {
+  home: 'ホーム',
   inbox: '受信箱',
   sent: '送信済み',
   drafts: '下書き',
@@ -153,6 +157,7 @@ export const FOLDER_LABELS: Readonly<Record<Folder, string>> = {
 
 /** 表示順に並べたフォルダ */
 export const FOLDERS: readonly Folder[] = [
+  'home',
   'inbox',
   'sent',
   'drafts',

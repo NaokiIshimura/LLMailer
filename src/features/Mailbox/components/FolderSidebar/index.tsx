@@ -34,8 +34,10 @@ export const FolderSidebar = ({
 
     {FOLDERS.map((item) => (
       <div key={item}>
-        {/* アドレス帳はスレッドのフォルダではないので区切る */}
-        {item === 'contacts' && <hr className={styles.separator} />}
+        {/* ホームとアドレス帳はスレッドのフォルダではないので区切る */}
+        {(item === 'inbox' || item === 'contacts') && (
+          <hr className={styles.separator} />
+        )}
         <button
           type="button"
           className={`${styles.item} ${folder === item ? styles.active : ''}`}

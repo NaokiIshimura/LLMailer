@@ -82,9 +82,7 @@ export const claudeCodeTransport: Transport = {
         throw new DeliveryError(error.message, { cause: error });
       }
       const message = error instanceof Error ? error.message : String(error);
-      throw new DeliveryError(`送信に失敗しました: ${message}`, {
-        cause: error,
-      });
+      throw new DeliveryError(message, { cause: error });
     }
   },
 };

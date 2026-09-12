@@ -2,6 +2,7 @@
 
 import { formatListDate } from '@/lib/format';
 import type { Agent, Folder, Message, Thread } from '@/types/mail';
+import { Icon } from '../Icon';
 import { Spinner } from '../Loader';
 import styles from './ThreadList.module.css';
 
@@ -17,6 +18,9 @@ interface ThreadListProps {
   readonly onChangeQuery: (query: string) => void;
   readonly onSelectThread: (threadId: string) => void;
   readonly onSelectDraft: (draft: Message) => void;
+  readonly onDeleteDraft: (draft: Message) => void;
+  /** 下書きの削除リクエスト中か */
+  readonly deletingDraft: boolean;
 }
 
 /** スレッド一覧（下書きフォルダでは下書き一覧） */
@@ -32,6 +36,8 @@ export const ThreadList = ({
   onChangeQuery,
   onSelectThread,
   onSelectDraft,
+  onDeleteDraft,
+  deletingDraft,
 }: ThreadListProps) => {
   const nameOf = (address: string): string =>
     agents.find((agent) => agent.address === address)?.name ?? address;
@@ -68,23 +74,37 @@ export const ThreadList = ({
 
         {folder === 'drafts'
           ? drafts.map((draft) => (
-              <button
-                key={draft.id}
-                type="button"
-                className={styles.item}
-                onClick={() => onSelectDraft(draft)}
-              >
-                <div className={styles.topRow}>
-                  <span className={styles.participants}>
-                    {draft.to.map(nameOf).join(', ') || '宛先未設定'}
-                  </span>
-                  <span className={styles.date}>
-                    {formatListDate(draft.createdAt)}
-                  </span>
-                </div>
-                <div className={styles.subject}>{draft.subject}</div>
-                <div className={styles.snippet}>{draft.body || '(本文なし)'}</div>
-              </button>
+              // 下書きを開くボタンの中に削除ボタンは置けないため、横に並べる
+              <div key={draft.id} className={styles.draftRow}>
+                <button
+                  type="button"
+                  className={styles.item}
+                  onClick={() => onSelectDraft(draft)}
+                >
+                  <div className={styles.topRow}>
+                    <span className={styles.participants}>
+                      {draft.to.map(nameOf).join(', ') || '宛先未設定'}
+                    </span>
+                    <span className={styles.date}>
+                      {formatListDate(draft.createdAt)}
+                    </span>
+                  </div>
+                  <div className={styles.subject}>{draft.subject}</div>
+                  <div className={styles.snippet}>
+                    {draft.body || '(本文なし)'}
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  className={styles.deleteButton}
+                  onClick={() => onDeleteDraft(draft)}
+                  disabled={deletingDraft}
+                  aria-label="この下書きを削除"
+                  title="この下書きを削除"
+                >
+                  {deletingDraft ? <Spinner /> : <Icon name="trash" size={15} />}
+                </button>
+              </div>
             ))
           : threads.map((thread) => (
               <button
@@ -120,7 +140,7 @@ export const ThreadList = ({
                   )}
                   {thread.hasFailure && (
                     <span className={`${styles.tag} ${styles.failureTag}`}>
-                      配信失敗
+                      失敗
                     </span>
                   )}
                 </div>

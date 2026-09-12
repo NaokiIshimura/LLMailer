@@ -84,7 +84,7 @@ export const MessageItem = ({
         <div className={styles.failure}>
           <span className={styles.failureText}>
             <Icon name="warning" size={15} />
-            送信に失敗しました: {message.error}
+            失敗しました: {message.error}
           </span>
           <div className={styles.failureActions}>
             {onRetry && (

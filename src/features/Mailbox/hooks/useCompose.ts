@@ -36,6 +36,7 @@ export interface UseComposeResult {
   readonly restore: (draft: ComposeDraft) => void;
   readonly update: (patch: Partial<ComposeDraft>) => void;
   readonly toggleRecipient: (address: string) => void;
+  /** 下書きとして保存し、作成ウィンドウを閉じる */
   readonly saveDraft: () => Promise<void>;
 }
 
@@ -100,22 +101,18 @@ export const useCompose = (onDraftSaved: () => void): UseComposeResult => {
     }
     setSaving(true);
     try {
-      const data = await fetchJson<{ readonly draft: Message }>(
-        '/api/messages/drafts',
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            id: draft.draftId,
-            to: draft.to,
-            subject: draft.subject,
-            body: draft.body,
-            threadId: draft.threadId,
-          }),
-        }
-      );
-      setDraft((current) =>
-        current ? { ...current, draftId: data.draft.id } : current
-      );
+      await fetchJson('/api/messages/drafts', {
+        method: 'POST',
+        body: JSON.stringify({
+          id: draft.draftId,
+          to: draft.to,
+          subject: draft.subject,
+          body: draft.body,
+          threadId: draft.threadId,
+        }),
+      });
+      // 保存した内容は下書きフォルダから開き直せるため、ウィンドウは閉じる
+      setDraft(null);
       onDraftSaved();
     } finally {
       setSaving(false);

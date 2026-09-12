@@ -1,0 +1,75 @@
+/* スレッド一覧の枠を使わないので、2 ペイン分の幅いっぱいに広げる */
+.view {
+  display: flex;
+  flex-direction: column;
+  grid-column: span 2;
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.title {
+  margin: 0 0 2px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.body {
+  flex: 1;
+  /* 設定は 1 行が長くなりすぎると読みにくいので、幅を抑える */
+  max-width: 720px;
+  padding: 16px 18px;
+  overflow-y: auto;
+}
+
+.groupTitle {
+  margin: 0 0 8px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.item + .item {
+  margin-top: 10px;
+}
+
+.itemText {
+  min-width: 0;
+}
+
+.itemTitle {
+  margin: 0 0 2px;
+  font-weight: 600;
+}
+
+.itemDescription {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}

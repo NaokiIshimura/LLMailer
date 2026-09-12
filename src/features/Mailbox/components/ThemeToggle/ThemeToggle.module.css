@@ -1,0 +1,41 @@
+.group {
+  display: inline-flex;
+  /* 並んでいる説明文に押されて選択肢が細らないようにする */
+  flex-shrink: 0;
+  /* 3 つで 1 つの部品に見えるよう、外枠だけを持たせる */
+  padding: 2px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  /* 選んだときに出る帯の分だけ詰めておく（選択が移っても大きさが動かないように） */
+  padding: 4px 10px;
+  background: none;
+  border: 2px solid transparent;
+  border-radius: calc(var(--radius) - 2px);
+  color: var(--color-text-muted);
+  font-size: 13px;
+  /* 「システム」などが 2 行にならないようにする */
+  white-space: nowrap;
+}
+
+.item:hover {
+  color: var(--color-text);
+}
+
+/* 選んでいるものは、送信したメールと同じ地色と帯（こちらは四辺）で示す */
+.active {
+  background: var(--color-sent-surface);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+.active:hover {
+  color: var(--color-accent);
+}

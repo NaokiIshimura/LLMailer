@@ -11,6 +11,6 @@ export {
 } from './useDeleteMessage';
 export { useJsonResource, type JsonResource } from './useJsonResource';
 export { useSendMessage, type UseSendMessageResult } from './useSendMessage';
-export { useTheme } from './useTheme';
+export { useTheme, type UseThemeResult } from './useTheme';
 export { useThreadDetail, type UseThreadDetailResult } from './useThreadDetail';
 export { useThreads, type UseThreadsResult } from './useThreads';

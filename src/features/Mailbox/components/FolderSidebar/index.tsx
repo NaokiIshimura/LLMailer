@@ -34,7 +34,7 @@ export const FolderSidebar = ({
 
     {FOLDERS.map((item) => (
       <div key={item}>
-        {/* ホームとアドレス帳はスレッドのフォルダではないので区切る */}
+        {/* ホームと、スレッド以外の画面（アドレス帳・設定）はまとめて区切る */}
         {(item === 'mailbox' || item === 'contacts') && (
           <hr className={styles.separator} />
         )}

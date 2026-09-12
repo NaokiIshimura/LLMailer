@@ -78,6 +78,9 @@ const showsThreads = (folder: Folder): boolean => {
     case 'contacts':
       // アドレス帳はスレッドを表示しない
       return false;
+    case 'settings':
+      // 設定はスレッドを表示しない
+      return false;
   }
 };
 

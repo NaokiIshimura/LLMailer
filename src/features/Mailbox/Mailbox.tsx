@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toThreadExchanges } from '@/lib/thread';
 import {
   isOutgoingMessage,
+  isThreadPaneFolder,
   NO_SUBJECT,
   type Agent,
   type Message,
@@ -19,6 +20,7 @@ import {
   GlobalLoader,
   HomeView,
   Icon,
+  SettingsView,
   ThreadList,
   ThreadView,
 } from './components';
@@ -47,9 +49,8 @@ export const Mailbox = () => {
 
   const agents = useAgents();
   const threads = useThreads();
-  /** スレッド本文を表示するフォルダか（ホームとアドレス帳では表示しない） */
-  const threadPaneVisible =
-    threads.folder !== 'home' && threads.folder !== 'contacts';
+  /** スレッド本文を表示するフォルダか（ホーム・アドレス帳・設定では表示しない） */
+  const threadPaneVisible = isThreadPaneFolder(threads.folder);
   const detail = useThreadDetail(
     selectedThreadId,
     threads.reload,
@@ -61,7 +62,7 @@ export const Mailbox = () => {
   const draftDeleter = useDeleteMessage();
   const compose = useCompose(threads.reload);
   const agentEditor = useAgentEditor(agents.reload);
-  useTheme();
+  const theme = useTheme();
 
   /** 削除されたエージェントも過去のスレッドには残るため、見つからない場合の表示も用意する */
   const agentName = useCallback(
@@ -166,11 +167,8 @@ export const Mailbox = () => {
     // 配信の完了を待たずに作成ウィンドウを閉じ、送信先のスレッドを開く
     compose.close();
     setSelectedThreadId(threadId);
-    if (
-      threads.folder === 'home' ||
-      threads.folder === 'contacts' ||
-      threads.folder === 'drafts'
-    ) {
+    // 送信したやり取りがそのまま見えるよう、どのフォルダからでもメールボックスへ移る
+    if (threads.folder !== 'mailbox') {
       threads.selectFolder('mailbox');
     }
 
@@ -396,6 +394,11 @@ export const Mailbox = () => {
             onSelectFolder={threads.selectFolder}
             onSelectThread={handleSelectHomeThread}
             onCompose={compose.openNew}
+          />
+        ) : threads.folder === 'settings' ? (
+          <SettingsView
+            theme={theme.theme}
+            onSelectTheme={theme.selectTheme}
           />
         ) : threads.folder === 'contacts' ? (
           <>

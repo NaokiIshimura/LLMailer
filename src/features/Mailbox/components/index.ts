@@ -9,5 +9,7 @@ export { GlobalLoader, Spinner } from './Loader';
 export { MarkdownBody } from './MarkdownBody';
 export { MessageItem } from './MessageItem';
 export { PermissionBadge } from './PermissionBadge';
+export { SettingsView } from './SettingsView';
+export { ThemeToggle } from './ThemeToggle';
 export { ThreadList } from './ThreadList';
 export { ThreadView } from './ThreadView';

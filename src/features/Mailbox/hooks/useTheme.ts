@@ -1,74 +1,79 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import {
   applyTheme,
-  cacheTheme,
   DARK_MEDIA_QUERY,
-  systemTheme,
-  type ResolvedTheme,
+  DEFAULT_THEME,
+  readStoredTheme,
+  resolveTheme,
+  storeTheme,
+  type ThemePreference,
 } from '@/lib/theme';
 
-/**
- * Next.js DevTools（画面左下のインジケーター）のホスト要素。
- * Preferences > Theme の選択は、この要素の class として現れる。
- */
-const DEVTOOLS_HOST_SELECTOR = 'nextjs-portal';
+export interface UseThemeResult {
+  /** 設定で選ばれているテーマ */
+  readonly theme: ThemePreference;
+  readonly selectTheme: (theme: ThemePreference) => void;
+}
 
-/** DevTools の選択を読む。class が付いていないときは 'System'（OS の設定）*/
-const readDevToolsTheme = (host: Element | null): ResolvedTheme => {
-  if (host?.classList.contains('dark')) {
-    return 'dark';
-  }
-  if (host?.classList.contains('light')) {
-    return 'light';
-  }
-  return systemTheme();
+/** 保存先（localStorage）の変化を React へ伝えるための控え */
+const listeners = new Set<() => void>();
+
+/** localStorage に保存できない環境でも、このセッションのあいだは選択を保てるようにする */
+let unsavedTheme: ThemePreference | null = null;
+
+const currentTheme = (): ThemePreference => unsavedTheme ?? readStoredTheme();
+
+const notify = (): void => {
+  listeners.forEach((listener) => listener());
 };
 
+/** 同じタブでの変更は notify、別タブでの変更は storage イベントで受け取る */
+const subscribe = (listener: () => void): (() => void) => {
+  listeners.add(listener);
+  window.addEventListener('storage', listener);
+  return () => {
+    listeners.delete(listener);
+    window.removeEventListener('storage', listener);
+  };
+};
+
+/** サーバーには設定が無いため、初回描画は既定のまま（描画前スクリプトが配色を当てる） */
+const serverTheme = (): ThemePreference => DEFAULT_THEME;
+
 /**
- * DevTools の Preferences > Theme をアプリ全体へ反映する。
+ * 画面の配色を持つ。
  *
- * DevTools は自分のパネル（shadow DOM）にしかテーマを当てないため、
- * ホスト要素の class を監視して html 要素へ写す。
- * DevTools が無い本番ビルドでは OS の設定に従う。
+ * 選んだテーマは localStorage に残し、次の読み込みでは
+ * 最初の描画より前に当たる（layout の THEME_INIT_SCRIPT）。
  */
-export const useTheme = (): void => {
+export const useTheme = (): UseThemeResult => {
+  const theme = useSyncExternalStore(subscribe, currentTheme, serverTheme);
+
+  // 'system' のあいだは OS の設定の切り替わりにも追従する
   useEffect(() => {
+    applyTheme(resolveTheme(theme));
+
+    if (theme !== 'system') {
+      return;
+    }
+
     const media = window.matchMedia(DARK_MEDIA_QUERY);
-    let observedHost: Element | null = null;
-    let hostObserver: MutationObserver | null = null;
-
     const sync = () => {
-      const resolved = readDevToolsTheme(observedHost);
-      applyTheme(resolved);
-      cacheTheme(resolved);
+      applyTheme(resolveTheme('system'));
     };
 
-    /** DevTools は読み込み後に差し込まれるので、現れてから class を監視する */
-    const watchHost = () => {
-      const host = document.querySelector(DEVTOOLS_HOST_SELECTOR);
-      if (host === observedHost) {
-        return;
-      }
-      hostObserver?.disconnect();
-      observedHost = host;
-      if (host) {
-        hostObserver = new MutationObserver(sync);
-        hostObserver.observe(host, { attributeFilter: ['class'] });
-      }
-      sync();
-    };
-
-    const bodyObserver = new MutationObserver(watchHost);
-    bodyObserver.observe(document.body, { childList: true });
     media.addEventListener('change', sync);
-    watchHost();
-
     return () => {
-      bodyObserver.disconnect();
-      hostObserver?.disconnect();
       media.removeEventListener('change', sync);
     };
+  }, [theme]);
+
+  const selectTheme = useCallback((next: ThemePreference) => {
+    unsavedTheme = storeTheme(next) ? null : next;
+    notify();
   }, []);
+
+  return { theme, selectTheme };
 };

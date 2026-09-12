@@ -42,6 +42,12 @@
   background: var(--color-accent-weak);
 }
 
+/* 対応中のスレッドは、左端の帯で一覧の中から見つけられるようにする */
+.pending {
+  padding-left: 11px;
+  border-left: 3px solid var(--color-accent);
+}
+
 .topRow {
   display: flex;
   align-items: baseline;
@@ -68,8 +74,13 @@
   align-items: center;
   gap: 6px;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 件名が長くても、後ろに続くタグが押し出されないようにする */
+.subjectText {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .unread {
@@ -94,8 +105,12 @@
 }
 
 .tag {
+  display: inline-flex;
   flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
   padding: 0 6px;
+  border: 1px solid transparent;
   border-radius: 4px;
   font-size: 11px;
   font-weight: 600;
@@ -104,6 +119,29 @@
 .pendingTag {
   background: var(--color-accent-weak);
   color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+/* 進行中であることが一目で分かるよう点滅させる */
+.pendingPulse {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  background: var(--color-accent);
+  border-radius: 50%;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pendingPulse {
+    animation: none;
+  }
 }
 
 .failureTag {

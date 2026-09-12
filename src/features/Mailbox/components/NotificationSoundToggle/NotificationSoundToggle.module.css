@@ -1,0 +1,21 @@
+.controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  /* 並んでいる説明文に押されて選択肢が細らないようにする */
+  flex-shrink: 0;
+}
+
+.preview {
+  padding: 6px 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.preview:hover {
+  color: var(--color-text);
+}

@@ -12,6 +12,8 @@ interface ThreadsResponse {
   readonly agentUnreadCounts: Readonly<Record<string, number>>;
   /** 対応中（応答待ち）の件数 */
   readonly pendingCount: number;
+  /** 受信（エージェントの返信）の件数 */
+  readonly receivedCount: number;
   readonly draftCount: number;
 }
 
@@ -28,6 +30,8 @@ export interface UseThreadsResult {
   readonly unreadCount: number;
   readonly agentUnreadCounts: Readonly<Record<string, number>>;
   readonly pendingCount: number;
+  /** 受信の件数。まだ取得できていなければ null（返信が届いたかを判断できない） */
+  readonly receivedCount: number | null;
   readonly draftCount: number;
   readonly loading: boolean;
   readonly error: string | null;
@@ -87,6 +91,8 @@ export const useThreads = (): UseThreadsResult => {
     agentUnreadCounts:
       resource.data?.agentUnreadCounts ?? NO_AGENT_UNREAD_COUNTS,
     pendingCount: resource.data?.pendingCount ?? 0,
+    // 0 で埋めると、初回の取得が「増えた」ことになってしまうため null のままにする
+    receivedCount: resource.data?.receivedCount ?? null,
     draftCount: resource.data?.draftCount ?? 0,
     loading: resource.loading,
     error: resource.error,

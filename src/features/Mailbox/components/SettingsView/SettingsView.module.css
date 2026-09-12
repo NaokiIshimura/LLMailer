@@ -44,6 +44,11 @@
   letter-spacing: 0.04em;
 }
 
+/* 2 つめ以降のまとまりは、前の項目から離して区切りを分かりやすくする */
+.nextGroupTitle {
+  margin-top: 22px;
+}
+
 .item {
   display: flex;
   align-items: center;

@@ -16,7 +16,9 @@ export type IconName =
   | 'arrowUp'
   | 'sun'
   | 'moon'
-  | 'desktop';
+  | 'desktop'
+  | 'bell'
+  | 'bellOff';
 
 /**
  * 24x24 のストロークアイコン。
@@ -113,6 +115,21 @@ const PATHS: Readonly<Record<IconName, ReactNode>> = {
       <rect x="2" y="4" width="20" height="13" rx="2" />
       <path d="M8 21h8" />
       <path d="M12 17v4" />
+    </>
+  ),
+  bell: (
+    <>
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </>
+  ),
+  bellOff: (
+    <>
+      <path d="M8.7 3A6 6 0 0 1 18 8c0 7 3 9 3 9H9" />
+      <path d="M6 8a6 6 0 0 1 .2-1.5" />
+      <path d="M5.3 5.3A6.7 6.7 0 0 0 6 8c0 7-3 9-3 9h4" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+      <path d="m2 2 20 20" />
     </>
   ),
 };

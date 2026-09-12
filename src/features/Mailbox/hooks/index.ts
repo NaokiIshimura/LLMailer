@@ -14,6 +14,11 @@ export {
   type UseDirectoryBrowserResult,
 } from './useDirectoryBrowser';
 export { useJsonResource, type JsonResource } from './useJsonResource';
+export {
+  useNotificationSound,
+  type UseNotificationSoundResult,
+} from './useNotificationSound';
+export { useReplyChime } from './useReplyChime';
 export { useSendMessage, type UseSendMessageResult } from './useSendMessage';
 export { useTheme, type UseThemeResult } from './useTheme';
 export { useThreadDetail, type UseThreadDetailResult } from './useThreadDetail';

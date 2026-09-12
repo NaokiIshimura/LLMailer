@@ -18,6 +18,8 @@
   --color-danger: #b4232c;
   --color-danger-weak: #fdeceb;
   --color-unread: #1a4bb5;
+  /* 自分が送ったメッセージの地色。本文が読めるようアクセントより薄くする */
+  --color-sent-surface: #f2f6fd;
   --color-overlay: rgba(16, 24, 40, 0.32);
   --radius: 8px;
   --shadow: 0 1px 3px rgba(16, 24, 40, 0.08);
@@ -38,6 +40,7 @@
   --color-danger: #f08a85;
   --color-danger-weak: #3a2325;
   --color-unread: #9db8ff;
+  --color-sent-surface: #1f2530;
   --color-overlay: rgba(0, 0, 0, 0.5);
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   --shadow-window: 0 12px 32px rgba(0, 0, 0, 0.5);

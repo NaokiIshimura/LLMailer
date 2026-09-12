@@ -50,6 +50,13 @@ export const MessageItem = ({
           )}
         </div>
         <div className={styles.meta}>
+          <span
+            className={`${styles.badge} ${
+              fromMe ? styles.sentBadge : styles.receivedBadge
+            }`}
+          >
+            {fromMe ? '送信' : '受信'}
+          </span>
           {message.run?.numTurns !== undefined && (
             <span title="Claude Code のターン数">
               {message.run.numTurns} turn

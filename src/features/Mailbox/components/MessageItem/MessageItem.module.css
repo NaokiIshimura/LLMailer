@@ -3,8 +3,11 @@
   border-bottom: 1px solid var(--color-border);
 }
 
+/* 自分が送ったメッセージは左端の帯と地色で見分ける（padding は帯の分だけ詰める） */
 .fromMe {
-  background: var(--color-surface-muted);
+  padding-left: 15px;
+  background: var(--color-sent-surface);
+  border-left: 3px solid var(--color-accent);
 }
 
 .header {
@@ -55,6 +58,17 @@
 .unreadBadge {
   background: var(--color-accent-weak);
   color: var(--color-accent);
+}
+
+/* 色だけに頼らず、送信か受信かを文字でも示す */
+.sentBadge {
+  background: var(--color-accent-weak);
+  color: var(--color-accent);
+}
+
+.receivedBadge {
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
 }
 
 .failure {

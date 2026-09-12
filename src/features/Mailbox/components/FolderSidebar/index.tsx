@@ -35,7 +35,7 @@ export const FolderSidebar = ({
     {FOLDERS.map((item) => (
       <div key={item}>
         {/* ホームとアドレス帳はスレッドのフォルダではないので区切る */}
-        {(item === 'inbox' || item === 'contacts') && (
+        {(item === 'mailbox' || item === 'contacts') && (
           <hr className={styles.separator} />
         )}
         <button
@@ -45,7 +45,7 @@ export const FolderSidebar = ({
           aria-current={folder === item}
         >
           <span>{FOLDER_LABELS[item]}</span>
-          {item === 'inbox' && unreadCount > 0 && (
+          {item === 'mailbox' && unreadCount > 0 && (
             <span className={styles.badge}>{unreadCount}</span>
           )}
           {item === 'drafts' && draftCount > 0 && (

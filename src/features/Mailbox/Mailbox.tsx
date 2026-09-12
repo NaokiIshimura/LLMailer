@@ -169,7 +169,7 @@ export const Mailbox = () => {
       threads.folder === 'contacts' ||
       threads.folder === 'drafts'
     ) {
-      threads.selectFolder('inbox');
+      threads.selectFolder('mailbox');
     }
 
     const result = await sender.send({
@@ -267,10 +267,10 @@ export const Mailbox = () => {
     }
   }, [compose, shownMessages]);
 
-  /** ホームから選んだスレッドは、種別を問わず出せる「全件」で開く */
+  /** ホームから選んだスレッドは、すべてのやり取りが出るメールボックスで開く */
   const handleSelectHomeThread = useCallback(
     (threadId: string) => {
-      threads.selectFolder('all');
+      threads.selectFolder('mailbox');
       setSelectedThreadId(threadId);
     },
     [threads]

@@ -1,6 +1,6 @@
 'use client';
 
-import { isDefaultAgentAddress } from '@/lib/agents/defaultAgents';
+import { isDefaultAgentId } from '@/lib/agents/defaultAgents';
 import { isFullAccessAgent, type Agent } from '@/types/mail';
 import { Icon } from '../Icon';
 import { PermissionBadge } from '../PermissionBadge';
@@ -9,7 +9,7 @@ import styles from './ContactView.module.css';
 interface ContactViewProps {
   readonly agent: Agent | null;
   readonly deleting: boolean;
-  readonly onCompose: (to: readonly string[]) => void;
+  readonly onCompose: (agentIds: readonly string[]) => void;
   readonly onEdit: (agent: Agent) => void;
   readonly onDelete: (agent: Agent) => void;
 }
@@ -39,7 +39,7 @@ export const ContactView = ({
 
   const fullAccess = isFullAccessAgent(agent);
   // 既定のエージェントはアプリの土台なので、画面からは変更・削除させない
-  const isDefault = isDefaultAgentAddress(agent.address);
+  const isDefault = isDefaultAgentId(agent.id);
 
   return (
     <section className={styles.view}>
@@ -50,13 +50,15 @@ export const ContactView = ({
             <PermissionBadge agent={agent} />
             {isDefault && <span className={styles.defaultTag}>既定</span>}
           </h1>
-          <p className={styles.address}>{agent.address}</p>
+          {agent.description && (
+            <p className={styles.description}>{agent.description}</p>
+          )}
         </div>
         <div className={styles.actions}>
           <button
             type="button"
             className={styles.composeButton}
-            onClick={() => onCompose([agent.address])}
+            onClick={() => onCompose([agent.id])}
           >
             <Icon name="mail" size={16} />
             メールを書く

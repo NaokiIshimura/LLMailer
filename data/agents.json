@@ -1,6 +1,6 @@
 [
   {
-    "address": "opus@llmailer.local",
+    "id": "opus",
     "name": "Opus（汎用）",
     "model": "opus",
     "description": "調べもの・相談。ファイルは読むだけ",
@@ -31,7 +31,7 @@
     ]
   },
   {
-    "address": "worker@llmailer.local",
+    "id": "worker",
     "name": "作業担当（フル権限）",
     "model": "opus",
     "description": "実装・修正を実際に行う。ファイルを変更できる",
@@ -40,7 +40,7 @@
     "permissionMode": "bypassPermissions"
   },
   {
-    "address": "reviewer@llmailer.local",
+    "id": "reviewer",
     "name": "コードレビュアー",
     "model": "opus",
     "description": "コードを読んで問題点を指摘する",
@@ -71,7 +71,7 @@
     ]
   },
   {
-    "address": "haiku@llmailer.local",
+    "id": "haiku",
     "name": "Haiku（高速）",
     "model": "haiku",
     "description": "短時間で要点だけ返す",
@@ -102,7 +102,7 @@
     ]
   },
   {
-    "address": "translator@llmailer.local",
+    "id": "translator",
     "name": "翻訳担当",
     "model": "sonnet",
     "description": "日英の翻訳のみを返す",
@@ -133,9 +133,9 @@
     ]
   },
   {
+    "id": "d86061f1-d141-433b-98ee-b1c6a379e258",
     "name": "test",
-    "model": "haiku",
-    "description": "テストエージェント",
+    "model": "opus",
     "workingDirectory": ".",
     "permissionMode": "manual",
     "allowedTools": [
@@ -159,8 +159,6 @@
     "settingSources": [
       "project",
       "local"
-    ],
-    "timeoutMs": 300000,
-    "address": "test@test"
+    ]
   }
 ]

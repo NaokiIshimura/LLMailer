@@ -1,5 +1,5 @@
 import {
-  ME_ADDRESS,
+  isOutgoingMessage,
   NO_SUBJECT,
   type Folder,
   type Message,
@@ -15,19 +15,15 @@ const toSnippet = (body: string): string => {
     : oneLine;
 };
 
+/** スレッドに出てくるエージェント（自分は相手ではないので含めない） */
 const collectParticipants = (messages: readonly Message[]): readonly string[] => {
-  const addresses = new Set<string>();
+  const agentIds = new Set<string>();
   for (const message of messages) {
-    if (message.from !== ME_ADDRESS) {
-      addresses.add(message.from);
-    }
-    for (const to of message.to) {
-      if (to !== ME_ADDRESS) {
-        addresses.add(to);
-      }
+    for (const agentId of message.agentIds) {
+      agentIds.add(agentId);
     }
   }
-  return [...addresses];
+  return [...agentIds];
 };
 
 /** スレッド単位にグループ化する（下書きはスレッドに含めない） */
@@ -155,7 +151,7 @@ export const toThreadExchanges = (
 
   for (const message of messages) {
     // 自分の送信が新しいまとまりの起点。エージェントの返信は直前のまとまりに続ける
-    if (message.from === ME_ADDRESS || exchanges.length === 0) {
+    if (isOutgoingMessage(message) || exchanges.length === 0) {
       exchanges.push([message]);
     } else {
       exchanges[exchanges.length - 1].push(message);

@@ -12,9 +12,10 @@ interface ComposeWindowProps {
   readonly sending: boolean;
   readonly saving: boolean;
   readonly error: string | null;
-  readonly displayName: (address: string) => string;
+  /** エージェント ID → 表示名 */
+  readonly agentName: (agentId: string) => string;
   readonly onChange: (patch: Partial<ComposeDraft>) => void;
-  readonly onToggleRecipient: (address: string) => void;
+  readonly onToggleRecipient: (agentId: string) => void;
   readonly onSend: () => void;
   readonly onSaveDraft: () => void;
   readonly onClose: () => void;
@@ -27,14 +28,15 @@ export const ComposeWindow = ({
   sending,
   saving,
   error,
-  displayName,
+  agentName,
   onChange,
   onToggleRecipient,
   onSend,
   onSaveDraft,
   onClose,
 }: ComposeWindowProps) => {
-  const canSend = draft.to.length > 0 && draft.body.trim().length > 0 && !sending;
+  const canSend =
+    draft.agentIds.length > 0 && draft.body.trim().length > 0 && !sending;
 
   return (
     <div
@@ -61,23 +63,23 @@ export const ComposeWindow = ({
           <span className={styles.label}>宛先</span>
           {draft.locked ? (
             <span className={styles.lockedRecipients}>
-              {draft.to.map(displayName).join(', ')}
+              {draft.agentIds.map(agentName).join(', ')}
             </span>
           ) : (
             <div className={styles.recipients}>
               {agents.map((agent) => {
-                const selected = draft.to.includes(agent.address);
+                const selected = draft.agentIds.includes(agent.id);
                 const fullAccess = isFullAccessAgent(agent);
                 return (
                   <button
-                    key={agent.address}
+                    key={agent.id}
                     type="button"
                     className={`${styles.recipient} ${
                       selected ? styles.recipientSelected : ''
                     }`}
-                    onClick={() => onToggleRecipient(agent.address)}
+                    onClick={() => onToggleRecipient(agent.id)}
                     aria-pressed={selected}
-                    title={`${agent.description ?? agent.address}${
+                    title={`${agent.description ?? agent.name}${
                       fullAccess
                         ? '（ファイル変更・コマンド実行が可能）'
                         : '（読み取り専用）'

@@ -1,6 +1,6 @@
 import {
   isFullAccessAgent,
-  ME_ADDRESS,
+  isOutgoingMessage,
   type Agent,
   type Message,
 } from '@/types/mail';
@@ -28,7 +28,7 @@ export const buildRolePrompt = (agent: Agent, subject: string): string => {
   ].join('');
 
   const lines = [
-    `あなたはメールクライアント "LLMailer" 上のエージェント「${agent.name}」（${agent.address}）です。`,
+    `あなたはメールクライアント "LLMailer" 上のエージェント「${agent.name}」です。`,
     'ユーザーから届いたメールに対し、メールの返信として自然な日本語で答えてください。',
     '返信の本文だけを書いてください（件名の繰り返しや署名は不要です）。',
     `このスレッドの件名: ${subject}`,
@@ -61,10 +61,11 @@ export const buildPrompt = (input: {
   const { newMessages, subject, isFirstTurn, agentNames } = input;
 
   const blocks = newMessages.map((message) => {
-    if (message.from === ME_ADDRESS) {
+    if (isOutgoingMessage(message)) {
       return message.body;
     }
-    const name = agentNames.get(message.from) ?? message.from;
+    const sender = message.agentIds[0];
+    const name = agentNames.get(sender) ?? '他のエージェント';
     return `【${name} の回答】\n${message.body}`;
   });
 

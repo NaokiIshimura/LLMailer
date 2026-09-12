@@ -1,8 +1,37 @@
-import type { Message } from '@/types/mail';
+import { isOutgoingMessage, type Message } from '@/types/mail';
+import { LEGACY_ME_ADDRESS, legacyAddressToAgentId } from './legacy';
 import { readJsonFile, updateJsonFile } from './jsonFile';
 
 const FILE_NAME = 'messages.json';
 const DEFAULT_MESSAGES: readonly Message[] = [];
+
+/** アドレスで宛先を表していた頃のメッセージ */
+type StoredMessage = Message & {
+  readonly from?: string;
+  readonly to?: readonly string[];
+};
+
+/**
+ * 保存済みのメッセージを読む（旧形式は from / to をエージェント ID へ畳む）。
+ *
+ * 自分発かどうかは配信状態から分かるため、利用者のアドレスは読み捨てる。
+ */
+const toMessage = ({ from, to, ...message }: StoredMessage): Message => {
+  if (message.agentIds) {
+    return message;
+  }
+  const addresses = isOutgoingMessage(message) ? (to ?? []) : [from ?? ''];
+  return {
+    ...message,
+    agentIds: addresses
+      .filter((address) => address !== '' && address !== LEGACY_ME_ADDRESS)
+      .map(legacyAddressToAgentId),
+  };
+};
+
+/** 保存済みの一覧を読む（書き戻すとその時点で新しい形式に揃う） */
+const toMessages = (stored: readonly StoredMessage[]): readonly Message[] =>
+  stored.map(toMessage);
 
 /**
  * 配信を担当するサーバープロセスの ID。
@@ -22,11 +51,11 @@ const byCreatedAtAsc = (a: Message, b: Message): number =>
   a.createdAt.localeCompare(b.createdAt);
 
 export const listMessages = async (): Promise<readonly Message[]> => {
-  const messages = await readJsonFile<readonly Message[]>(
+  const messages = await readJsonFile<readonly StoredMessage[]>(
     FILE_NAME,
     DEFAULT_MESSAGES
   );
-  return [...messages].sort(byCreatedAtAsc);
+  return [...toMessages(messages)].sort(byCreatedAtAsc);
 };
 
 export const listThreadMessages = async (
@@ -43,11 +72,14 @@ export const findMessage = async (id: string): Promise<Message | undefined> => {
 
 /** メッセージを追加する（同一 ID が既にある場合は置き換える） */
 export const saveMessage = async (message: Message): Promise<Message> =>
-  updateJsonFile<readonly Message[], Message>(
+  updateJsonFile<readonly StoredMessage[], Message>(
     FILE_NAME,
     DEFAULT_MESSAGES,
     (current) => ({
-      next: [...current.filter((item) => item.id !== message.id), message],
+      next: [
+        ...toMessages(current).filter((item) => item.id !== message.id),
+        message,
+      ],
       result: message,
     })
   );
@@ -55,24 +87,27 @@ export const saveMessage = async (message: Message): Promise<Message> =>
 export const saveMessages = async (
   messages: readonly Message[]
 ): Promise<readonly Message[]> =>
-  updateJsonFile<readonly Message[], readonly Message[]>(
+  updateJsonFile<readonly StoredMessage[], readonly Message[]>(
     FILE_NAME,
     DEFAULT_MESSAGES,
     (current) => {
       const ids = new Set(messages.map((message) => message.id));
       return {
-        next: [...current.filter((item) => !ids.has(item.id)), ...messages],
+        next: [
+          ...toMessages(current).filter((item) => !ids.has(item.id)),
+          ...messages,
+        ],
         result: messages,
       };
     }
   );
 
 export const deleteMessage = async (id: string): Promise<boolean> =>
-  updateJsonFile<readonly Message[], boolean>(
+  updateJsonFile<readonly StoredMessage[], boolean>(
     FILE_NAME,
     DEFAULT_MESSAGES,
     (current) => ({
-      next: current.filter((message) => message.id !== id),
+      next: toMessages(current).filter((message) => message.id !== id),
       result: current.some((message) => message.id === id),
     })
   );
@@ -89,12 +124,12 @@ export const failStalePendingMessages = async (): Promise<number> => {
     return 0;
   }
 
-  return updateJsonFile<readonly Message[], number>(
+  return updateJsonFile<readonly StoredMessage[], number>(
     FILE_NAME,
     DEFAULT_MESSAGES,
     (current) => {
       let updated = 0;
-      const next = current.map((message) => {
+      const next = toMessages(current).map((message) => {
         if (!isStalePending(message)) {
           return message;
         }
@@ -115,12 +150,12 @@ export const failStalePendingMessages = async (): Promise<number> => {
 
 /** スレッド内の未読メッセージをすべて既読にする */
 export const markThreadAsRead = async (threadId: string): Promise<number> =>
-  updateJsonFile<readonly Message[], number>(
+  updateJsonFile<readonly StoredMessage[], number>(
     FILE_NAME,
     DEFAULT_MESSAGES,
     (current) => {
       let updated = 0;
-      const next = current.map((message) => {
+      const next = toMessages(current).map((message) => {
         if (message.threadId !== threadId || message.read) {
           return message;
         }

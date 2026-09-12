@@ -39,8 +39,8 @@ export const ThreadList = ({
   onDeleteDraft,
   deletingDraft,
 }: ThreadListProps) => {
-  const nameOf = (address: string): string =>
-    agents.find((agent) => agent.address === address)?.name ?? address;
+  const nameOf = (agentId: string): string =>
+    agents.find((agent) => agent.id === agentId)?.name ?? '不明なエージェント';
 
   return (
     <section className={styles.list}>
@@ -83,7 +83,7 @@ export const ThreadList = ({
                 >
                   <div className={styles.topRow}>
                     <span className={styles.participants}>
-                      {draft.to.map(nameOf).join(', ') || '宛先未設定'}
+                      {draft.agentIds.map(nameOf).join(', ') || '宛先未設定'}
                     </span>
                     <span className={styles.date}>
                       {formatListDate(draft.createdAt)}

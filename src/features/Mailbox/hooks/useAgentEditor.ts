@@ -11,9 +11,8 @@ import {
 
 /** エージェント編集フォームの入力内容 */
 export interface AgentForm {
-  /** 編集中のエージェントのアドレス（新規追加のときは null） */
+  /** 編集中のエージェントの ID（新規追加のときは null） */
   readonly editing: string | null;
-  readonly address: string;
   readonly name: string;
   readonly model: string;
   readonly description: string;
@@ -26,7 +25,6 @@ export interface AgentForm {
 
 const EMPTY_FORM: AgentForm = {
   editing: null,
-  address: '',
   name: '',
   model: 'opus',
   description: '',
@@ -48,7 +46,7 @@ export interface UseAgentEditorResult {
   /** 保存できたら追加・変更後のエージェントを返す */
   readonly save: () => Promise<Agent | null>;
   /** 削除できたら true */
-  readonly remove: (address: string) => Promise<boolean>;
+  readonly remove: (agentId: string) => Promise<boolean>;
 }
 
 const toRequestBody = (form: AgentForm) => {
@@ -88,8 +86,7 @@ export const useAgentEditor = (onChanged: () => void): UseAgentEditorResult => {
   const openEdit = useCallback((agent: Agent) => {
     setError(null);
     setForm({
-      editing: agent.address,
-      address: agent.address,
+      editing: agent.id,
       name: agent.name,
       model: agent.model,
       description: agent.description ?? '',
@@ -127,11 +124,7 @@ export const useAgentEditor = (onChanged: () => void): UseAgentEditorResult => {
           : `/api/agents/${encodeURIComponent(form.editing)}`,
         {
           method: form.editing === null ? 'POST' : 'PUT',
-          body: JSON.stringify(
-            form.editing === null
-              ? { ...body, address: form.address.trim() }
-              : body
-          ),
+          body: JSON.stringify(body),
         }
       );
       setForm(null);
@@ -146,11 +139,11 @@ export const useAgentEditor = (onChanged: () => void): UseAgentEditorResult => {
   }, [form, onChanged]);
 
   const remove = useCallback(
-    async (address: string): Promise<boolean> => {
+    async (agentId: string): Promise<boolean> => {
       setDeleting(true);
       setError(null);
       try {
-        await fetchJson(`/api/agents/${encodeURIComponent(address)}`, {
+        await fetchJson(`/api/agents/${encodeURIComponent(agentId)}`, {
           method: 'DELETE',
         });
         setForm(null);

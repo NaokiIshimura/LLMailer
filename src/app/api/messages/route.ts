@@ -12,7 +12,7 @@ import {
 import { claudeCodeTransport } from '@/lib/transport/claudeCodeTransport';
 import { DeliveryError } from '@/lib/transport/types';
 import {
-  ME_ADDRESS,
+  isOutgoingMessage,
   NO_SUBJECT,
   type Agent,
   type Message,
@@ -31,8 +31,8 @@ const isSendMessageRequest = (value: unknown): value is SendMessageRequest => {
   }
   const body = value as Record<string, unknown>;
   return (
-    Array.isArray(body.to) &&
-    body.to.every((to) => typeof to === 'string') &&
+    Array.isArray(body.agentIds) &&
+    body.agentIds.every((id) => typeof id === 'string') &&
     typeof body.body === 'string'
   );
 };
@@ -46,8 +46,7 @@ const isSendMessageRequest = (value: unknown): value is SendMessageRequest => {
 const createPendingMessage = (agent: Agent, sent: Message): Message => ({
   id: randomUUID(),
   threadId: sent.threadId,
-  from: agent.address,
-  to: [ME_ADDRESS],
+  agentIds: [agent.id],
   subject: sent.subject,
   body: '',
   status: 'pending',
@@ -71,17 +70,17 @@ const deliverTo = async (
   history: readonly Message[],
   agentNames: ReadonlyMap<string, string>
 ): Promise<Message> => {
+  const isFromThisAgent = (message: Message): boolean =>
+    !isOutgoingMessage(message) && message.agentIds[0] === agent.id;
+
   const lastReply = [...history]
     .reverse()
-    .find(
-      (message) =>
-        message.from === agent.address && message.status === 'received'
-    );
+    .find((message) => message.status === 'received' && isFromThisAgent(message));
 
   const newMessages = history.filter(
     (message) =>
       (message.status === 'sent' || message.status === 'received') &&
-      message.from !== agent.address &&
+      !isFromThisAgent(message) &&
       (!lastReply || message.createdAt > lastReply.createdAt)
   );
 
@@ -89,8 +88,7 @@ const deliverTo = async (
     // プレースホルダと同じ ID で保存し、「対応中」の 1 通を結果へ差し替える
     id: pending.id,
     threadId: sent.threadId,
-    from: agent.address,
-    to: [ME_ADDRESS],
+    agentIds: [agent.id],
     subject: sent.subject,
     inReplyTo: sent.id,
     read: false,
@@ -120,7 +118,7 @@ const deliverTo = async (
       error instanceof DeliveryError
         ? error.message
         : '原因不明のエラーで失敗しました。';
-    console.error('[llmailer] deliver failed', agent.address, error);
+    console.error('[llmailer] deliver failed', agent.id, error);
 
     return {
       ...base,
@@ -143,23 +141,19 @@ export const POST = async (request: NextRequest): Promise<NextResponse> => {
     if (!body) {
       return errorResponse('本文を入力してください。', 400);
     }
-    if (payload.to.length === 0) {
+    if (payload.agentIds.length === 0) {
       return errorResponse('宛先を 1 件以上指定してください。', 400);
     }
 
     const agents = await listAgents();
-    const recipients = payload.to.map((address) =>
-      agents.find((agent) => agent.address === address)
+    const recipients = payload.agentIds.map((id) =>
+      agents.find((agent) => agent.id === id)
     );
-    const unknownIndex = recipients.findIndex((agent) => agent === undefined);
-    if (unknownIndex >= 0) {
-      return errorResponse(
-        `宛先が見つかりません: ${payload.to[unknownIndex]}`,
-        400
-      );
+    if (recipients.some((agent) => agent === undefined)) {
+      return errorResponse('宛先のエージェントが見つかりません。', 400);
     }
     const knownRecipients = recipients as readonly Agent[];
-    const agentNames = new Map(agents.map((agent) => [agent.address, agent.name]));
+    const agentNames = new Map(agents.map((agent) => [agent.id, agent.name]));
 
     const threadId = payload.threadId ?? randomUUID();
     const previous = payload.threadId
@@ -171,8 +165,7 @@ export const POST = async (request: NextRequest): Promise<NextResponse> => {
     const sent: Message = {
       id: randomUUID(),
       threadId,
-      from: ME_ADDRESS,
-      to: payload.to,
+      agentIds: payload.agentIds,
       subject,
       body,
       status: 'sent',
@@ -209,7 +202,7 @@ export const POST = async (request: NextRequest): Promise<NextResponse> => {
             );
             await saveMessage(reply);
           } catch (error) {
-            console.error('[llmailer] 配信結果の保存に失敗しました', agent.address, error);
+            console.error('[llmailer] 配信結果の保存に失敗しました', agent.id, error);
           }
         })
       );

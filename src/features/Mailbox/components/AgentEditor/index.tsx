@@ -38,11 +38,7 @@ export const AgentEditor = ({
   onClose,
 }: AgentEditorProps) => {
   const isNew = form.editing === null;
-  const canSave =
-    form.name.trim() !== '' &&
-    form.model.trim() !== '' &&
-    (!isNew || form.address.trim() !== '') &&
-    !saving;
+  const canSave = form.name.trim() !== '' && form.model.trim() !== '' && !saving;
 
   return (
     <div className={styles.overlay}>
@@ -67,24 +63,6 @@ export const AgentEditor = ({
         {error && <p className={styles.error}>{error}</p>}
 
         <div className={styles.fields}>
-          <label className={styles.field}>
-            <span className={styles.label}>アドレス</span>
-            {isNew ? (
-              <input
-                type="text"
-                className={`${styles.input} ${styles.mono}`}
-                value={form.address}
-                placeholder="myrepo@llmailer.local"
-                onChange={(event) => onChange({ address: event.target.value })}
-              />
-            ) : (
-              // アドレスは送受信済みメッセージの宛先なので、後からは変えられない
-              <span className={`${styles.fixed} ${styles.mono}`}>
-                {form.address}
-              </span>
-            )}
-          </label>
-
           <label className={styles.field}>
             <span className={styles.label}>名前</span>
             <input

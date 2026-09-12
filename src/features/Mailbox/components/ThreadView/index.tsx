@@ -13,7 +13,8 @@ interface ThreadViewProps {
   readonly exchanges: readonly (readonly Message[])[];
   readonly loading: boolean;
   readonly error: string | null;
-  readonly displayName: (address: string) => string;
+  /** エージェント ID → 表示名 */
+  readonly agentName: (agentId: string) => string;
   readonly onReply: () => void;
   readonly onRetry: (failed: Message) => void;
   /** 再送せずに失敗した配信を取り消す */
@@ -28,7 +29,7 @@ export const ThreadView = ({
   exchanges,
   loading,
   error,
-  displayName,
+  agentName,
   onReply,
   onRetry,
   onCancelFailure,
@@ -69,7 +70,7 @@ export const ThreadView = ({
         <div>
           <h1 className={styles.subject}>{thread.subject}</h1>
           <p className={styles.participants}>
-            {thread.participants.map(displayName).join(', ')} ・{' '}
+            {thread.participants.map(agentName).join(', ')} ・{' '}
             {thread.messageCount} 通
           </p>
         </div>
@@ -87,7 +88,7 @@ export const ThreadView = ({
               <MessageItem
                 key={message.id}
                 message={message}
-                displayName={displayName}
+                agentName={agentName}
                 onRetry={message.status === 'failed' ? onRetry : undefined}
                 onCancel={
                   message.status === 'failed' ? onCancelFailure : undefined

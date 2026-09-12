@@ -1,6 +1,3 @@
-/** ユーザー自身のアドレス */
-export const ME_ADDRESS = 'me@llmailer.local';
-
 /**
  * Claude Code の権限モード。
  * 'manual' は非対話実行では「許可されたツール以外は実行されない」状態になる。
@@ -34,7 +31,11 @@ export const SETTING_SOURCES: readonly SettingSource[] = [
 
 /** 宛先となる AI エージェント（ローカルの Claude Code を 1 プロセス起動する単位） */
 export interface Agent {
-  readonly address: string;
+  /**
+   * エージェントの識別子。追加時にサーバーが採番し、後から変更しない。
+   * 送受信済みメッセージから参照されるだけで、画面には出さない。
+   */
+  readonly id: string;
   readonly name: string;
   /** Claude Code のモデル指定（'opus' / 'sonnet' / 'haiku' またはフル名） */
   readonly model: string;
@@ -165,8 +166,12 @@ export interface RunInfo {
 export interface Message {
   readonly id: string;
   readonly threadId: string;
-  readonly from: string;
-  readonly to: readonly string[];
+  /**
+   * やり取りの相手となるエージェント。
+   * 自分が出したもの（下書き・送信済み）は宛先、
+   * エージェント側のもの（対応中・受信・失敗）は差出人の 1 件が入る。
+   */
+  readonly agentIds: readonly string[];
   readonly subject: string;
   readonly body: string;
   readonly status: MessageStatus;
@@ -187,10 +192,20 @@ export interface Message {
   readonly deliveryProcessId?: string;
 }
 
+/**
+ * 自分が出したメッセージか。
+ *
+ * やり取りは常に「自分 ↔ エージェント」なので、配信状態から向きが決まる。
+ * 利用者を表すアドレスを持たなくても、これで送信と受信を見分けられる。
+ */
+export const isOutgoingMessage = (message: Message): boolean =>
+  message.status === 'draft' || message.status === 'sent';
+
 /** Message[] から導出するスレッド */
 export interface Thread {
   readonly id: string;
   readonly subject: string;
+  /** このスレッドに出てくるエージェントの ID */
   readonly participants: readonly string[];
   readonly lastMessageAt: string;
   readonly messageCount: number;
@@ -226,7 +241,8 @@ export const NO_SUBJECT = '(件名なし)';
 
 /** POST /api/messages のリクエストボディ */
 export interface SendMessageRequest {
-  readonly to: readonly string[];
+  /** 宛先のエージェント ID */
+  readonly agentIds: readonly string[];
   readonly subject: string;
   readonly body: string;
   readonly threadId?: string;
@@ -245,19 +261,23 @@ export interface SendMessageResponse {
   readonly pending: readonly Message[];
 }
 
-/** POST /api/agents のリクエストボディ */
-export type CreateAgentRequest = Agent;
+/**
+ * POST /api/agents のリクエストボディ。
+ * ID はサーバーが採番するので、追加でも変更でも同じ内容を送る。
+ */
+export type CreateAgentRequest = Omit<Agent, 'id'>;
 
 /**
- * PUT /api/agents/[address] のリクエストボディ。
- * アドレスは送受信済みメッセージから参照される識別子なので、後から変更しない。
+ * PUT /api/agents/[id] のリクエストボディ。
+ * ID は送受信済みメッセージから参照される識別子なので、後から変更しない。
  */
-export type UpdateAgentRequest = Omit<Agent, 'address'>;
+export type UpdateAgentRequest = Omit<Agent, 'id'>;
 
 /** 下書き保存のリクエストボディ */
 export interface SaveDraftRequest {
   readonly id?: string;
-  readonly to: readonly string[];
+  /** 宛先のエージェント ID */
+  readonly agentIds: readonly string[];
   readonly subject: string;
   readonly body: string;
   readonly threadId?: string;

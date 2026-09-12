@@ -10,12 +10,13 @@ import { DENY_WRITE_TOOLS, READ_ONLY_TOOLS, type Agent } from '@/types/mail';
  * workingDirectory は Claude Code の作業ディレクトリで、相対パスは
  * LLMailer プロジェクトからの相対として解決される。
  *
+ * ID は過去のやり取りから参照されるため、既定のぶんは固定値にしておく。
  * この一覧は「どれが既定か」の判定にも使うため、サーバー専用の処理は置かない
  * （クライアントからも読み込めるようにしておく）。
  */
 export const DEFAULT_AGENTS: readonly Agent[] = [
   {
-    address: 'opus@llmailer.local',
+    id: 'opus',
     name: 'Opus（汎用）',
     model: 'opus',
     description: '調べもの・相談。ファイルは読むだけ',
@@ -28,7 +29,7 @@ export const DEFAULT_AGENTS: readonly Agent[] = [
     settingSources: ['project', 'local'],
   },
   {
-    address: 'worker@llmailer.local',
+    id: 'worker',
     name: '作業担当（フル権限）',
     model: 'opus',
     description: '実装・修正を実際に行う。ファイルを変更できる',
@@ -38,7 +39,7 @@ export const DEFAULT_AGENTS: readonly Agent[] = [
     permissionMode: 'bypassPermissions',
   },
   {
-    address: 'reviewer@llmailer.local',
+    id: 'reviewer',
     name: 'コードレビュアー',
     model: 'opus',
     description: 'コードを読んで問題点を指摘する',
@@ -51,7 +52,7 @@ export const DEFAULT_AGENTS: readonly Agent[] = [
     settingSources: ['project', 'local'],
   },
   {
-    address: 'haiku@llmailer.local',
+    id: 'haiku',
     name: 'Haiku（高速）',
     model: 'haiku',
     description: '短時間で要点だけ返す',
@@ -64,7 +65,7 @@ export const DEFAULT_AGENTS: readonly Agent[] = [
     settingSources: ['project', 'local'],
   },
   {
-    address: 'translator@llmailer.local',
+    id: 'translator',
     name: '翻訳担当',
     model: 'sonnet',
     description: '日英の翻訳のみを返す',
@@ -84,5 +85,5 @@ export const DEFAULT_AGENTS: readonly Agent[] = [
  * 既定はアプリの土台として常に居てほしいので、変更・削除の対象から外す。
  * data/agents.json を直接編集すれば変えられるが、画面からは触れないようにする。
  */
-export const isDefaultAgentAddress = (address: string): boolean =>
-  DEFAULT_AGENTS.some((agent) => agent.address === address);
+export const isDefaultAgentId = (id: string): boolean =>
+  DEFAULT_AGENTS.some((agent) => agent.id === id);

@@ -25,8 +25,8 @@ import {
 import {
   useAgentEditor,
   useAgents,
-  useCancelFailedMessage,
   useCompose,
+  useDeleteMessage,
   useSendMessage,
   useTheme,
   useThreadDetail,
@@ -56,7 +56,8 @@ export const Mailbox = () => {
     threadPaneVisible
   );
   const sender = useSendMessage();
-  const canceler = useCancelFailedMessage();
+  const canceler = useDeleteMessage();
+  const draftDeleter = useDeleteMessage();
   const compose = useCompose(threads.reload);
   const agentEditor = useAgentEditor(agents.reload);
   useTheme();
@@ -228,11 +229,11 @@ export const Mailbox = () => {
    * 配信に失敗した返信を、再送せずに取り消す。
    *
    * 失敗したメッセージそのものを消すので、
-   * 「送信に失敗しました」も配信失敗のタグも残らない。
+   * 「失敗しました」も失敗のタグも残らない。
    */
   const handleCancelFailure = useCallback(
     async (failed: Message) => {
-      const canceled = await canceler.cancel(failed.id);
+      const canceled = await canceler.remove(failed.id);
       if (!canceled) {
         return;
       }
@@ -287,6 +288,28 @@ export const Mailbox = () => {
     [compose]
   );
 
+  const handleDeleteDraft = useCallback(
+    async (draftMessage: Message) => {
+      const confirmed = window.confirm(
+        `下書き「${draftMessage.subject}」を削除しますか？`
+      );
+      if (!confirmed) {
+        return;
+      }
+
+      if (!(await draftDeleter.remove(draftMessage.id))) {
+        return;
+      }
+
+      // 削除した下書きを開いたままだと、保存し直して復活してしまう
+      if (compose.draft?.draftId === draftMessage.id) {
+        compose.close();
+      }
+      threads.reload();
+    },
+    [compose, draftDeleter, threads]
+  );
+
   /** 追加・変更したエージェントは、そのまま詳細で確認できるように選択しておく */
   const handleSaveAgent = useCallback(async () => {
     const saved = await agentEditor.save();
@@ -334,6 +357,9 @@ export const Mailbox = () => {
 
       {agents.error && <p className={styles.notice}>{agents.error}</p>}
       {canceler.error && <p className={styles.notice}>{canceler.error}</p>}
+      {draftDeleter.error && (
+        <p className={styles.notice}>{draftDeleter.error}</p>
+      )}
       {/* 編集フォームを開いていないときの失敗（削除など）はヘッダー下に出す */}
       {agentEditor.error && !agentEditor.form && (
         <p className={styles.notice}>{agentEditor.error}</p>
@@ -395,6 +421,10 @@ export const Mailbox = () => {
               onChangeQuery={threads.changeQuery}
               onSelectThread={selectThread}
               onSelectDraft={handleSelectDraft}
+              onDeleteDraft={(draftMessage) =>
+                void handleDeleteDraft(draftMessage)
+              }
+              deletingDraft={draftDeleter.deleting}
             />
 
             <ThreadView
@@ -407,7 +437,7 @@ export const Mailbox = () => {
               onReply={handleReply}
               onRetry={handleRetry}
               onCancelFailure={handleCancelFailure}
-              canceling={canceler.canceling}
+              canceling={canceler.deleting}
             />
           </>
         )}

@@ -147,7 +147,7 @@ export const HomeView = ({
                   )}
                   {thread.hasFailure && (
                     <span className={`${styles.tag} ${styles.failureTag}`}>
-                      配信失敗
+                      失敗
                     </span>
                   )}
                 </div>

@@ -38,6 +38,43 @@
   background: var(--color-surface-muted);
 }
 
+/* 下書きは「開く」と「削除」を横に並べ、区切り線は行側で引く */
+.draftRow {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.draftRow .item {
+  flex: 1;
+  /* 件名・本文がはみ出しても削除ボタンを押し出さない */
+  min-width: 0;
+  border-bottom: none;
+}
+
+.deleteButton {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-right: 8px;
+  background: none;
+  border: none;
+  border-radius: var(--radius);
+  color: var(--color-text-muted);
+}
+
+.deleteButton:hover:not(:disabled) {
+  background: var(--color-danger-weak);
+  color: var(--color-danger);
+}
+
+.deleteButton:disabled {
+  opacity: 0.5;
+}
+
 .selected {
   background: var(--color-accent-weak);
 }

@@ -167,6 +167,15 @@ export const countUnreadByAgent = (
   return counts;
 };
 
+/**
+ * 受信（エージェントの返信）の件数。
+ *
+ * 既読かどうかに関わらず数えるので、増えたときだけが「返信が届いた」瞬間になる。
+ * 既読件数では、読んだだけで減って検知できない。
+ */
+export const countReceived = (messages: readonly Message[]): number =>
+  messages.filter((message) => message.status === 'received').length;
+
 /** 対応中（応答待ち）の件数 */
 export const countPending = (messages: readonly Message[]): number =>
   messages.filter((message) => message.status === 'pending').length;

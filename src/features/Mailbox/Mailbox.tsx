@@ -29,6 +29,8 @@ import {
   useAgents,
   useCompose,
   useDeleteMessage,
+  useNotificationSound,
+  useReplyChime,
   useSendMessage,
   useTheme,
   useThreadDetail,
@@ -63,6 +65,10 @@ export const Mailbox = () => {
   const compose = useCompose(threads.reload);
   const agentEditor = useAgentEditor(agents.reload);
   const theme = useTheme();
+  const notificationSound = useNotificationSound();
+
+  /** 返信が届いたら通知音で知らせる（画面を見ていなくても作業の完了が分かるように） */
+  useReplyChime(threads.receivedCount, notificationSound.play);
 
   /** 削除されたエージェントも過去のスレッドには残るため、見つからない場合の表示も用意する */
   const agentName = useCallback(
@@ -409,6 +415,9 @@ export const Mailbox = () => {
           <SettingsView
             theme={theme.theme}
             onSelectTheme={theme.selectTheme}
+            notificationSound={notificationSound.enabled}
+            onSelectNotificationSound={notificationSound.setEnabled}
+            onPreviewNotificationSound={notificationSound.preview}
           />
         ) : threads.folder === 'contacts' ? (
           <>

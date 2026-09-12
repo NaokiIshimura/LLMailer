@@ -9,7 +9,12 @@ export { Icon, type IconName } from './Icon';
 export { GlobalLoader, Spinner } from './Loader';
 export { MarkdownBody } from './MarkdownBody';
 export { MessageItem } from './MessageItem';
+export { NotificationSoundToggle } from './NotificationSoundToggle';
 export { PermissionBadge } from './PermissionBadge';
+export {
+  SegmentedControl,
+  type SegmentedOption,
+} from './SegmentedControl';
 export { SettingsView } from './SettingsView';
 export { ThemeToggle } from './ThemeToggle';
 export { ThreadList } from './ThreadList';

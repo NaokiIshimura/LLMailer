@@ -5,14 +5,21 @@ import {
   THEME_PREFERENCES,
   type ThemePreference,
 } from '@/lib/theme';
-import { Icon, type IconName } from '../Icon';
-import styles from './ThemeToggle.module.css';
+import type { IconName } from '../Icon';
+import { SegmentedControl, type SegmentedOption } from '../SegmentedControl';
 
 const ICONS: Readonly<Record<ThemePreference, IconName>> = {
   system: 'desktop',
   light: 'sun',
   dark: 'moon',
 };
+
+const OPTIONS: readonly SegmentedOption<ThemePreference>[] =
+  THEME_PREFERENCES.map((theme) => ({
+    value: theme,
+    label: THEME_LABELS[theme],
+    icon: ICONS[theme],
+  }));
 
 interface ThemeToggleProps {
   readonly theme: ThemePreference;
@@ -21,18 +28,10 @@ interface ThemeToggleProps {
 
 /** 画面の配色を選ぶ */
 export const ThemeToggle = ({ theme, onSelect }: ThemeToggleProps) => (
-  <div className={styles.group} role="group" aria-label="表示テーマ">
-    {THEME_PREFERENCES.map((item) => (
-      <button
-        key={item}
-        type="button"
-        className={`${styles.item} ${theme === item ? styles.active : ''}`}
-        onClick={() => onSelect(item)}
-        aria-pressed={theme === item}
-      >
-        <Icon name={ICONS[item]} size={15} />
-        {THEME_LABELS[item]}
-      </button>
-    ))}
-  </div>
+  <SegmentedControl
+    label="表示テーマ"
+    options={OPTIONS}
+    selected={theme}
+    onSelect={onSelect}
+  />
 );

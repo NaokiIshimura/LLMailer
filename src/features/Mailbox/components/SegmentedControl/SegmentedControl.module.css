@@ -2,7 +2,7 @@
   display: inline-flex;
   /* 並んでいる説明文に押されて選択肢が細らないようにする */
   flex-shrink: 0;
-  /* 3 つで 1 つの部品に見えるよう、外枠だけを持たせる */
+  /* 並んだ選択肢が 1 つの部品に見えるよう、外枠だけを持たせる */
   padding: 2px;
   background: var(--color-surface-muted);
   border: 1px solid var(--color-border);
@@ -20,7 +20,7 @@
   border-radius: calc(var(--radius) - 2px);
   color: var(--color-text-muted);
   font-size: 13px;
-  /* 「システム」などが 2 行にならないようにする */
+  /* 「システム」などの短い語が 2 行にならないようにする */
   white-space: nowrap;
 }
 

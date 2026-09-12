@@ -8,6 +8,7 @@ import {
   buildDrafts,
   buildThreads,
   countPending,
+  countReceived,
   countUnread,
   countUnreadByAgent,
 } from '@/lib/thread';
@@ -35,6 +36,8 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
       unreadCount: countUnread(messages),
       agentUnreadCounts: countUnreadByAgent(messages),
       pendingCount: countPending(messages),
+      // 返信が届いたかを画面側で見分けるための件数（絞り込みに左右されないよう全体で数える）
+      receivedCount: countReceived(messages),
       draftCount: buildDrafts(messages).length,
     });
   } catch (error) {

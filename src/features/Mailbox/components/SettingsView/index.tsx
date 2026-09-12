@@ -1,12 +1,16 @@
 'use client';
 
 import type { ThemePreference } from '@/lib/theme';
+import { NotificationSoundToggle } from '../NotificationSoundToggle';
 import { ThemeToggle } from '../ThemeToggle';
 import styles from './SettingsView.module.css';
 
 interface SettingsViewProps {
   readonly theme: ThemePreference;
   readonly onSelectTheme: (theme: ThemePreference) => void;
+  readonly notificationSound: boolean;
+  readonly onSelectNotificationSound: (enabled: boolean) => void;
+  readonly onPreviewNotificationSound: () => void;
 }
 
 /**
@@ -15,7 +19,13 @@ interface SettingsViewProps {
  * 項目が増えても並べるだけで済むよう、1 項目を「見出し・説明・操作」の
  * 組み合わせ（.item）として並べる。
  */
-export const SettingsView = ({ theme, onSelectTheme }: SettingsViewProps) => (
+export const SettingsView = ({
+  theme,
+  onSelectTheme,
+  notificationSound,
+  onSelectNotificationSound,
+  onPreviewNotificationSound,
+}: SettingsViewProps) => (
   <section className={styles.view}>
     <header className={styles.header}>
       <div>
@@ -34,6 +44,21 @@ export const SettingsView = ({ theme, onSelectTheme }: SettingsViewProps) => (
           </p>
         </div>
         <ThemeToggle theme={theme} onSelect={onSelectTheme} />
+      </div>
+
+      <h2 className={`${styles.groupTitle} ${styles.nextGroupTitle}`}>通知</h2>
+      <div className={styles.item}>
+        <div className={styles.itemText}>
+          <p className={styles.itemTitle}>返信の通知音</p>
+          <p className={styles.itemDescription}>
+            エージェントの作業が終わって返信が届いたときに、メールの着信音を鳴らします。
+          </p>
+        </div>
+        <NotificationSoundToggle
+          enabled={notificationSound}
+          onSelect={onSelectNotificationSound}
+          onPreview={onPreviewNotificationSound}
+        />
       </div>
     </div>
   </section>

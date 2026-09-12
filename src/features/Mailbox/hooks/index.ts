@@ -1,4 +1,8 @@
 export { useAgents, type UseAgentsResult } from './useAgents';
+export {
+  useCancelFailedMessage,
+  type UseCancelFailedMessageResult,
+} from './useCancelFailedMessage';
 export { useCompose, type ComposeDraft, type UseComposeResult } from './useCompose';
 export { useJsonResource, type JsonResource } from './useJsonResource';
 export { useSendMessage, type UseSendMessageResult } from './useSendMessage';

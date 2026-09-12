@@ -17,6 +17,10 @@ interface MessageItemProps {
   /** アドレス → 表示名 */
   readonly displayName: (address: string) => string;
   readonly onRetry?: (message: Message) => void;
+  /** 再送せずに失敗した配信を取り消す */
+  readonly onCancel?: (message: Message) => void;
+  /** 取り消しリクエスト中か */
+  readonly canceling?: boolean;
 }
 
 /** 1 通のメッセージ */
@@ -24,6 +28,8 @@ export const MessageItem = ({
   message,
   displayName,
   onRetry,
+  onCancel,
+  canceling = false,
 }: MessageItemProps) => {
   const fromMe = message.from === ME_ADDRESS;
 
@@ -71,18 +77,32 @@ export const MessageItem = ({
         <div className={styles.failure}>
           <span className={styles.failureText}>
             <Icon name="warning" size={15} />
-            配信に失敗しました: {message.error}
+            送信に失敗しました: {message.error}
           </span>
-          {onRetry && (
-            <button
-              type="button"
-              className={styles.retryButton}
-              onClick={() => onRetry(message)}
-            >
-              <Icon name="retry" size={13} />
-              再送
-            </button>
-          )}
+          <div className={styles.failureActions}>
+            {onRetry && (
+              <button
+                type="button"
+                className={styles.retryButton}
+                onClick={() => onRetry(message)}
+                disabled={canceling}
+              >
+                <Icon name="retry" size={13} />
+                再送
+              </button>
+            )}
+            {onCancel && (
+              <button
+                type="button"
+                className={styles.cancelButton}
+                onClick={() => onCancel(message)}
+                disabled={canceling}
+              >
+                {canceling ? <Spinner /> : <Icon name="close" size={13} />}
+                キャンセル
+              </button>
+            )}
+          </div>
         </div>
       ) : message.status === 'pending' ? (
         <p className={styles.pending}>

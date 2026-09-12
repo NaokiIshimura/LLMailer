@@ -119,7 +119,7 @@ const deliverTo = async (
     const message =
       error instanceof DeliveryError
         ? error.message
-        : '原因不明のエラーで配信に失敗しました。';
+        : '原因不明のエラーで送信に失敗しました。';
     console.error('[llmailer] deliver failed', agent.address, error);
 
     return {

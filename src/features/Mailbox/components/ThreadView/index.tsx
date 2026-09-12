@@ -16,6 +16,10 @@ interface ThreadViewProps {
   readonly displayName: (address: string) => string;
   readonly onReply: () => void;
   readonly onRetry: (failed: Message) => void;
+  /** 再送せずに失敗した配信を取り消す */
+  readonly onCancelFailure: (failed: Message) => void;
+  /** 取り消しリクエスト中か */
+  readonly canceling: boolean;
 }
 
 /** スレッド本文 */
@@ -27,6 +31,8 @@ export const ThreadView = ({
   displayName,
   onReply,
   onRetry,
+  onCancelFailure,
+  canceling,
 }: ThreadViewProps) => {
   // 再取得中でも、すでに開いているスレッドがあれば内容を出し続ける
   if (loading && !thread) {
@@ -83,6 +89,10 @@ export const ThreadView = ({
                 message={message}
                 displayName={displayName}
                 onRetry={message.status === 'failed' ? onRetry : undefined}
+                onCancel={
+                  message.status === 'failed' ? onCancelFailure : undefined
+                }
+                canceling={canceling}
               />
             ))}
           </Fragment>

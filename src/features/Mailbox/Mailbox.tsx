@@ -22,6 +22,7 @@ import {
 } from './components';
 import {
   useAgents,
+  useCancelFailedMessage,
   useCompose,
   useSendMessage,
   useTheme,
@@ -52,6 +53,7 @@ export const Mailbox = () => {
     threadPaneVisible
   );
   const sender = useSendMessage();
+  const canceler = useCancelFailedMessage();
   const compose = useCompose(threads.reload);
   useTheme();
 
@@ -218,6 +220,36 @@ export const Mailbox = () => {
     [detail, sender, shownMessages, threads]
   );
 
+  /**
+   * 配信に失敗した返信を、再送せずに取り消す。
+   *
+   * 失敗したメッセージそのものを消すので、
+   * 「送信に失敗しました」も配信失敗のタグも残らない。
+   */
+  const handleCancelFailure = useCallback(
+    async (failed: Message) => {
+      const canceled = await canceler.cancel(failed.id);
+      if (!canceled) {
+        return;
+      }
+
+      // 送信直後の控えに残っていると「対応中」として戻ってしまうため、そこからも外す
+      setRecentSend((current) =>
+        current
+          ? {
+              ...current,
+              pending: current.pending.filter(
+                (message) => message.id !== failed.id
+              ),
+            }
+          : current
+      );
+      threads.reload();
+      detail.reload();
+    },
+    [canceler, detail, threads]
+  );
+
   /** スレッドの最後のエージェント発言に返信する */
   const handleReply = useCallback(() => {
     const target = [...shownMessages]
@@ -274,6 +306,7 @@ export const Mailbox = () => {
       </header>
 
       {agents.error && <p className={styles.notice}>{agents.error}</p>}
+      {canceler.error && <p className={styles.notice}>{canceler.error}</p>}
 
       <div className={styles.panes}>
         <FolderSidebar
@@ -335,6 +368,8 @@ export const Mailbox = () => {
               displayName={displayName}
               onReply={handleReply}
               onRetry={handleRetry}
+              onCancelFailure={handleCancelFailure}
+              canceling={canceler.canceling}
             />
           </>
         )}

@@ -56,7 +56,8 @@ export const Mailbox = () => {
     threadPaneVisible
   );
   const sender = useSendMessage();
-  const canceler = useDeleteMessage();
+  /** 失敗した返信を消すためのもの（再送後の片付けと、再送しない取り消しで使う） */
+  const failureDeleter = useDeleteMessage();
   const draftDeleter = useDeleteMessage();
   const compose = useCompose(threads.reload);
   const agentEditor = useAgentEditor(agents.reload);
@@ -194,6 +195,34 @@ export const Mailbox = () => {
     detail.reload();
   }, [compose, detail, sender, threads]);
 
+  /**
+   * 配信に失敗した返信そのものを消す。
+   *
+   * 「失敗しました」の行も一覧の失敗ラベルも、この 1 通だけが根拠なので、
+   * 消せば再送・取り消しのボタンもラベルも残らない。
+   */
+  const dismissFailure = useCallback(
+    async (failed: Message): Promise<boolean> => {
+      if (!(await failureDeleter.remove(failed.id))) {
+        return false;
+      }
+
+      // 送信直後の控えに残っていると「対応中」として戻ってしまうため、そこからも外す
+      setRecentSend((current) =>
+        current
+          ? {
+              ...current,
+              pending: current.pending.filter(
+                (message) => message.id !== failed.id
+              ),
+            }
+          : current
+      );
+      return true;
+    },
+    [failureDeleter]
+  );
+
   /** 配信に失敗した返信を、元の送信内容でもう一度配信する */
   const handleRetry = useCallback(
     async (failed: Message) => {
@@ -212,43 +241,30 @@ export const Mailbox = () => {
         inReplyTo: original.id,
       });
 
-      if (result) {
-        setRecentSend(result);
-        threads.reload();
-        detail.reload();
-      }
-    },
-    [detail, sender, shownMessages, threads]
-  );
-
-  /**
-   * 配信に失敗した返信を、再送せずに取り消す。
-   *
-   * 失敗したメッセージそのものを消すので、
-   * 「失敗しました」も失敗のタグも残らない。
-   */
-  const handleCancelFailure = useCallback(
-    async (failed: Message) => {
-      const canceled = await canceler.remove(failed.id);
-      if (!canceled) {
+      if (!result) {
         return;
       }
 
-      // 送信直後の控えに残っていると「対応中」として戻ってしまうため、そこからも外す
-      setRecentSend((current) =>
-        current
-          ? {
-              ...current,
-              pending: current.pending.filter(
-                (message) => message.id !== failed.id
-              ),
-            }
-          : current
-      );
+      // 再送したからには、もう済んだ失敗を残さない
+      await dismissFailure(failed);
+      setRecentSend(result);
       threads.reload();
       detail.reload();
     },
-    [canceler, detail, threads]
+    [detail, dismissFailure, sender, shownMessages, threads]
+  );
+
+  /** 配信に失敗した返信を、再送せずに取り消す */
+  const handleCancelFailure = useCallback(
+    async (failed: Message) => {
+      if (!(await dismissFailure(failed))) {
+        return;
+      }
+
+      threads.reload();
+      detail.reload();
+    },
+    [detail, dismissFailure, threads]
   );
 
   /** スレッドの最後のエージェント発言に返信する */
@@ -346,7 +362,9 @@ export const Mailbox = () => {
       </header>
 
       {agents.error && <p className={styles.notice}>{agents.error}</p>}
-      {canceler.error && <p className={styles.notice}>{canceler.error}</p>}
+      {failureDeleter.error && (
+        <p className={styles.notice}>{failureDeleter.error}</p>
+      )}
       {draftDeleter.error && (
         <p className={styles.notice}>{draftDeleter.error}</p>
       )}
@@ -427,7 +445,7 @@ export const Mailbox = () => {
               onReply={handleReply}
               onRetry={handleRetry}
               onCancelFailure={handleCancelFailure}
-              canceling={canceler.deleting}
+              dismissing={failureDeleter.deleting}
             />
           </>
         )}

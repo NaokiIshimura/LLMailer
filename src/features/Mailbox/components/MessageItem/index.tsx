@@ -19,8 +19,8 @@ interface MessageItemProps {
   readonly onRetry?: (message: Message) => void;
   /** 再送せずに失敗した配信を取り消す */
   readonly onCancel?: (message: Message) => void;
-  /** 取り消しリクエスト中か */
-  readonly canceling?: boolean;
+  /** 失敗した配信の片付け（再送後の削除・取り消し）リクエスト中か */
+  readonly dismissing?: boolean;
 }
 
 /** 1 通のメッセージ */
@@ -29,7 +29,7 @@ export const MessageItem = ({
   agentName,
   onRetry,
   onCancel,
-  canceling = false,
+  dismissing = false,
 }: MessageItemProps) => {
   const fromMe = isOutgoingMessage(message);
   // やり取りは「自分 ↔ エージェント」なので、向きだけで差出人と宛先が決まる
@@ -94,7 +94,7 @@ export const MessageItem = ({
                 type="button"
                 className={styles.retryButton}
                 onClick={() => onRetry(message)}
-                disabled={canceling}
+                disabled={dismissing}
               >
                 <Icon name="retry" size={13} />
                 再送
@@ -105,9 +105,9 @@ export const MessageItem = ({
                 type="button"
                 className={styles.cancelButton}
                 onClick={() => onCancel(message)}
-                disabled={canceling}
+                disabled={dismissing}
               >
-                {canceling ? <Spinner /> : <Icon name="close" size={13} />}
+                {dismissing ? <Spinner /> : <Icon name="close" size={13} />}
                 キャンセル
               </button>
             )}

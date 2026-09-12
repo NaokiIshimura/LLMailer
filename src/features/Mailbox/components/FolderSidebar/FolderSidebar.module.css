@@ -31,6 +31,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  /* 新規作成ボタンと同じく、サイドバーの幅いっぱいをクリック領域にする */
+  width: 100%;
   padding: 7px 10px;
   background: none;
   border: none;

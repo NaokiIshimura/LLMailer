@@ -87,6 +87,32 @@
   border-color: var(--color-accent);
 }
 
+.select {
+  padding: 5px 8px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text);
+  outline: none;
+}
+
+.select:focus {
+  border-color: var(--color-accent);
+}
+
+.model {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* 縦並びのため、input の flex: 1 が高さに効かないよう打ち消す */
+.model .input {
+  flex: 0 0 auto;
+}
+
 .number {
   flex: 0 0 100px;
   width: 100px;
@@ -192,4 +218,32 @@
   background: var(--color-danger-weak);
   color: var(--color-danger);
   font-size: 13px;
+}
+
+.directory {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.directoryButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text);
+  text-align: left;
+}
+
+.directoryButton:hover {
+  border-color: var(--color-accent);
+}
+
+.directoryPath {
+  overflow-wrap: anywhere;
 }

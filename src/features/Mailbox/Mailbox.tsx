@@ -24,6 +24,7 @@ import {
   useAgents,
   useCompose,
   useSendMessage,
+  useTheme,
   useThreadDetail,
   useThreads,
 } from './hooks';
@@ -49,6 +50,7 @@ export const Mailbox = () => {
   );
   const sender = useSendMessage();
   const compose = useCompose(threads.reload);
+  useTheme();
 
   const displayName = useCallback(
     (address: string): string => {

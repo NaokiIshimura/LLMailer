@@ -9,7 +9,7 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  box-shadow: 0 12px 32px rgba(16, 24, 40, 0.24);
+  box-shadow: var(--shadow-window);
   overflow: hidden;
   z-index: 40;
 }
@@ -121,7 +121,7 @@
   background: var(--color-accent);
   border: none;
   border-radius: var(--radius);
-  color: #fff;
+  color: var(--color-on-accent);
   font-weight: 700;
 }
 

@@ -1,4 +1,10 @@
+/*
+ * 配色は html[data-theme] で切り替える。
+ * 設定（preferences）のテーマが 'system' のときは OS の設定を解決した値が入るため、
+ * ここを見ているすべての画面・ウィンドウが同じテーマで表示される。
+ */
 :root {
+  color-scheme: light;
   --color-bg: #f5f6f8;
   --color-surface: #ffffff;
   --color-surface-muted: #fafbfc;
@@ -7,28 +13,34 @@
   --color-text-muted: #6b7280;
   --color-accent: #3159a8;
   --color-accent-weak: #e8eefb;
+  /* アクセント色の上に載せる文字色 */
+  --color-on-accent: #ffffff;
   --color-danger: #b4232c;
   --color-danger-weak: #fdeceb;
   --color-unread: #1a4bb5;
+  --color-overlay: rgba(16, 24, 40, 0.32);
   --radius: 8px;
   --shadow: 0 1px 3px rgba(16, 24, 40, 0.08);
+  --shadow-window: 0 12px 32px rgba(16, 24, 40, 0.24);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #16181d;
-    --color-surface: #1d2026;
-    --color-surface-muted: #22262d;
-    --color-border: #31363f;
-    --color-text: #e7e9ee;
-    --color-text-muted: #9aa2b1;
-    --color-accent: #7aa2f7;
-    --color-accent-weak: #24304a;
-    --color-danger: #f08a85;
-    --color-danger-weak: #3a2325;
-    --color-unread: #9db8ff;
-    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  }
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-bg: #16181d;
+  --color-surface: #1d2026;
+  --color-surface-muted: #22262d;
+  --color-border: #31363f;
+  --color-text: #e7e9ee;
+  --color-text-muted: #9aa2b1;
+  --color-accent: #7aa2f7;
+  --color-accent-weak: #24304a;
+  --color-on-accent: #16181d;
+  --color-danger: #f08a85;
+  --color-danger-weak: #3a2325;
+  --color-unread: #9db8ff;
+  --color-overlay: rgba(0, 0, 0, 0.5);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-window: 0 12px 32px rgba(0, 0, 0, 0.5);
 }
 
 * {

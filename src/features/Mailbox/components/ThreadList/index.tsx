@@ -92,7 +92,7 @@ export const ThreadList = ({
                 type="button"
                 className={`${styles.item} ${
                   thread.id === selectedThreadId ? styles.selected : ''
-                }`}
+                } ${thread.hasPending ? styles.pending : ''}`}
                 onClick={() => onSelectThread(thread.id)}
               >
                 <div className={styles.topRow}>
@@ -111,9 +111,10 @@ export const ThreadList = ({
                   {thread.unreadCount > 0 && (
                     <span className={styles.dot} aria-label="未読" />
                   )}
-                  <span>{thread.subject}</span>
+                  <span className={styles.subjectText}>{thread.subject}</span>
                   {thread.hasPending && (
                     <span className={`${styles.tag} ${styles.pendingTag}`}>
+                      <span className={styles.pendingPulse} aria-hidden="true" />
                       対応中
                     </span>
                   )}

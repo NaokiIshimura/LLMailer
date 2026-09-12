@@ -136,6 +136,7 @@ export const HomeView = ({
                   {thread.participants.map(displayName).join(', ')}
                   {thread.hasPending && (
                     <span className={`${styles.tag} ${styles.pendingTag}`}>
+                      <span className={styles.pendingPulse} aria-hidden="true" />
                       対応中
                     </span>
                   )}

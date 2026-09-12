@@ -14,6 +14,7 @@ interface HomeViewProps {
   readonly agents: readonly Agent[];
   readonly unreadCount: number;
   readonly draftCount: number;
+  /** 対応中（応答待ち）の件数 */
   readonly pendingCount: number;
   readonly loading: boolean;
   readonly error: string | null;
@@ -47,7 +48,7 @@ export const HomeView = ({
     readonly accent?: boolean;
   }[] = [
     { label: '未読', count: unreadCount, folder: 'inbox', accent: unreadCount > 0 },
-    { label: '配信中', count: pendingCount, folder: 'inbox' },
+    { label: '対応中', count: pendingCount, folder: 'inbox' },
     { label: '下書き', count: draftCount, folder: 'drafts' },
     { label: 'エージェント', count: agents.length, folder: 'contacts' },
   ];
@@ -135,7 +136,7 @@ export const HomeView = ({
                   {thread.participants.map(displayName).join(', ')}
                   {thread.hasPending && (
                     <span className={`${styles.tag} ${styles.pendingTag}`}>
-                      配信中
+                      対応中
                     </span>
                   )}
                   {thread.hasFailure && (

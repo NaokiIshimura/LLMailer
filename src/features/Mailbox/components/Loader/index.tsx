@@ -5,13 +5,13 @@ export const Spinner = () => (
 );
 
 interface GlobalLoaderProps {
-  /** 進行中のリクエスト件数。0 のときは何も表示しない */
+  /** 進行中の件数。0 のときは何も表示しない */
   readonly count: number;
   readonly label?: string;
 }
 
-/** 画面右下に進行中のリクエストを表示する */
-export const GlobalLoader = ({ count, label = '配信中' }: GlobalLoaderProps) => {
+/** 画面右下に進行中の配信を表示する */
+export const GlobalLoader = ({ count, label = '対応中' }: GlobalLoaderProps) => {
   if (count <= 0) {
     return null;
   }

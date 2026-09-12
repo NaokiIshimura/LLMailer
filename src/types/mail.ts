@@ -85,7 +85,7 @@ export type MessageStatus =
   | 'draft'
   /** 送信済み（ユーザー発） */
   | 'sent'
-  /** 配信中（応答待ちのプレースホルダ） */
+  /** 対応中（応答待ちのプレースホルダ） */
   | 'pending'
   /** 受信（エージェントの応答） */
   | 'received'
@@ -125,6 +125,11 @@ export interface Message {
   /** Claude Code のセッション ID（次回の --resume に使う） */
   readonly sessionId?: string;
   readonly run?: RunInfo;
+  /**
+   * 配信を担当しているサーバープロセスの ID（status === 'pending' のときだけ入る）。
+   * プロセスが入れ替わると返信はもう届かないため、取り残しの判定に使う。
+   */
+  readonly deliveryProcessId?: string;
 }
 
 /** Message[] から導出するスレッド */
@@ -177,10 +182,15 @@ export interface SendMessageRequest {
   readonly draftId?: string;
 }
 
-/** POST /api/messages のレスポンス */
+/**
+ * POST /api/messages のレスポンス。
+ *
+ * 配信の完了は待たず、保存した送信と「対応中」のプレースホルダを返す。
+ * 返信が届くとプレースホルダが同じ ID で置き換わる。
+ */
 export interface SendMessageResponse {
   readonly sent: Message;
-  readonly replies: readonly Message[];
+  readonly pending: readonly Message[];
 }
 
 /** 下書き保存のリクエストボディ */

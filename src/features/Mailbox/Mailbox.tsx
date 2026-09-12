@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toThreadExchanges } from '@/lib/thread';
 import {
   ME_ADDRESS,
@@ -29,6 +29,9 @@ import {
   useThreads,
 } from './hooks';
 import styles from './Mailbox.module.css';
+
+/** 対応中の配信があるあいだ、返信が届いたかを見に行く間隔 */
+const PENDING_POLL_INTERVAL_MS = 3000;
 
 /** LLMailer の 3 ペイン画面 */
 export const Mailbox = () => {
@@ -73,33 +76,23 @@ export const Mailbox = () => {
     setSelectedThreadId(threadId);
   }, []);
 
-  const pendingForThread = useMemo(
-    () =>
-      sender.pendingDeliveries.filter(
-        (pending) => pending.threadId === selectedThreadId
-      ),
-    [sender.pendingDeliveries, selectedThreadId]
-  );
+  /** 配信はサーバー側で続くため、対応中があるあいだは返信が届いたかを見に行く */
+  const { pendingCount, reload: reloadThreads } = threads;
+  const { reload: reloadDetail } = detail;
+  useEffect(() => {
+    if (pendingCount === 0) {
+      return;
+    }
 
-  /**
-   * 配信中の送信は、まだサーバーに保存されていないため一覧・詳細に現れない。
-   * 送信した本文をそのまま送信済みメッセージとして見せる。
-   */
-  const optimisticMessages = useMemo(
-    (): readonly Message[] =>
-      pendingForThread.map((pending) => ({
-        id: `pending-${pending.id}`,
-        threadId: pending.threadId ?? '',
-        from: ME_ADDRESS,
-        to: pending.to,
-        subject: pending.subject,
-        body: pending.body,
-        status: 'sent',
-        createdAt: pending.createdAt,
-        read: true,
-      })),
-    [pendingForThread]
-  );
+    const timer = setInterval(() => {
+      reloadThreads();
+      reloadDetail();
+    }, PENDING_POLL_INTERVAL_MS);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, [pendingCount, reloadThreads, reloadDetail]);
 
   /**
    * 送信直後は再取得がまだ終わっていないため、
@@ -110,18 +103,14 @@ export const Mailbox = () => {
       return [];
     }
     const knownIds = new Set(detail.messages.map((message) => message.id));
-    return [recentSend.sent, ...recentSend.replies].filter(
+    return [recentSend.sent, ...recentSend.pending].filter(
       (message) => !knownIds.has(message.id)
     );
   }, [detail.messages, recentSend, selectedThreadId]);
 
   const shownMessages = useMemo(
-    (): readonly Message[] => [
-      ...detail.messages,
-      ...recentMessages,
-      ...optimisticMessages,
-    ],
-    [detail.messages, recentMessages, optimisticMessages]
+    (): readonly Message[] => [...detail.messages, ...recentMessages],
+    [detail.messages, recentMessages]
   );
 
   /** 本文は「送信とその返信」を 1 まとまりにして、新しいものから並べる */
@@ -130,7 +119,7 @@ export const Mailbox = () => {
     [shownMessages]
   );
 
-  const headMessage = pendingForThread[0] ?? recentSend?.sent;
+  const headMessage = recentSend?.sent;
 
   /** 新規送信の直後は、サーバーに保存される前でもスレッドとして表示する */
   const shownThread: Thread | null =
@@ -144,14 +133,16 @@ export const Mailbox = () => {
           messageCount: shownMessages.length,
           unreadCount: 0,
           snippet: '',
-          hasPending: pendingForThread.length > 0,
+          hasPending: shownMessages.some(
+            (message) => message.status === 'pending'
+          ),
           hasFailure: shownMessages.some(
             (message) => message.status === 'failed'
           ),
         }
       : null);
 
-  /** 配信中のスレッドは一覧にまだ無いので、先頭に足して選択状態が分かるようにする */
+  /** 送信直後のスレッドは一覧にまだ無いので、先頭に足して選択状態が分かるようにする */
   const shownThreads: readonly Thread[] =
     threads.folder !== 'drafts' &&
     shownThread &&
@@ -300,7 +291,7 @@ export const Mailbox = () => {
             agents={agents.agents}
             unreadCount={threads.unreadCount}
             draftCount={threads.draftCount}
-            pendingCount={sender.pendingDeliveries.length}
+            pendingCount={pendingCount}
             loading={threads.loading}
             error={threads.error}
             displayName={displayName}
@@ -338,7 +329,6 @@ export const Mailbox = () => {
             <ThreadView
               thread={shownThread}
               exchanges={shownExchanges}
-              pendingDeliveries={pendingForThread}
               loading={detail.loading}
               // 保存前のスレッドを取得しに行くと 404 になるため、表示できているうちは伏せる
               error={shownMessages.length > 0 ? null : detail.error}
@@ -366,7 +356,7 @@ export const Mailbox = () => {
         />
       )}
 
-      <GlobalLoader count={sender.pendingDeliveries.length} />
+      <GlobalLoader count={pendingCount} />
     </div>
   );
 };

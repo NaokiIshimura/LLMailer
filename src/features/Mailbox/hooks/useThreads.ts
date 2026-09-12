@@ -8,6 +8,8 @@ interface ThreadsResponse {
   readonly threads: readonly Thread[];
   readonly drafts: readonly Message[];
   readonly unreadCount: number;
+  /** 対応中（応答待ち）の件数 */
+  readonly pendingCount: number;
   readonly draftCount: number;
 }
 
@@ -17,6 +19,7 @@ export interface UseThreadsResult {
   readonly threads: readonly Thread[];
   readonly drafts: readonly Message[];
   readonly unreadCount: number;
+  readonly pendingCount: number;
   readonly draftCount: number;
   readonly loading: boolean;
   readonly error: string | null;
@@ -51,6 +54,7 @@ export const useThreads = (): UseThreadsResult => {
     threads: resource.data?.threads ?? [],
     drafts: resource.data?.drafts ?? [],
     unreadCount: resource.data?.unreadCount ?? 0,
+    pendingCount: resource.data?.pendingCount ?? 0,
     draftCount: resource.data?.draftCount ?? 0,
     loading: resource.loading,
     error: resource.error,

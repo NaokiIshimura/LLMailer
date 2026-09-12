@@ -86,7 +86,7 @@ export const MessageItem = ({
         </div>
       ) : message.status === 'pending' ? (
         <p className={styles.pending}>
-          <Spinner /> 配信中…
+          <Spinner /> 対応中…
         </p>
       ) : (
         <>

@@ -112,6 +112,11 @@ export const ThreadList = ({
                     <span className={styles.dot} aria-label="未読" />
                   )}
                   <span>{thread.subject}</span>
+                  {thread.hasPending && (
+                    <span className={`${styles.tag} ${styles.pendingTag}`}>
+                      対応中
+                    </span>
+                  )}
                   {thread.hasFailure && (
                     <span className={`${styles.tag} ${styles.failureTag}`}>
                       配信失敗

@@ -14,6 +14,7 @@ import {
   ContactView,
   FolderSidebar,
   GlobalLoader,
+  HomeView,
   Icon,
   ThreadList,
   ThreadView,
@@ -154,7 +155,11 @@ export const Mailbox = () => {
     // 配信の完了を待たずに作成ウィンドウを閉じ、送信先のスレッドを開く
     compose.close();
     setSelectedThreadId(threadId);
-    if (threads.folder === 'contacts' || threads.folder === 'drafts') {
+    if (
+      threads.folder === 'home' ||
+      threads.folder === 'contacts' ||
+      threads.folder === 'drafts'
+    ) {
       threads.selectFolder('inbox');
     }
 
@@ -223,6 +228,15 @@ export const Mailbox = () => {
     }
   }, [compose, shownMessages]);
 
+  /** ホームから選んだスレッドは、種別を問わず出せる「全件」で開く */
+  const handleSelectHomeThread = useCallback(
+    (threadId: string) => {
+      threads.selectFolder('all');
+      setSelectedThreadId(threadId);
+    },
+    [threads]
+  );
+
   const handleSelectDraft = useCallback(
     (draftMessage: Message) => {
       compose.openDraft(draftMessage);
@@ -264,7 +278,21 @@ export const Mailbox = () => {
           onCompose={compose.openNew}
         />
 
-        {threads.folder === 'contacts' ? (
+        {threads.folder === 'home' ? (
+          <HomeView
+            threads={threads.threads}
+            agents={agents.agents}
+            unreadCount={threads.unreadCount}
+            draftCount={threads.draftCount}
+            pendingCount={sender.pendingDeliveries.length}
+            loading={threads.loading}
+            error={threads.error}
+            displayName={displayName}
+            onSelectFolder={threads.selectFolder}
+            onSelectThread={handleSelectHomeThread}
+            onCompose={compose.openNew}
+          />
+        ) : threads.folder === 'contacts' ? (
           <>
             <ContactList
               agents={agents.agents}

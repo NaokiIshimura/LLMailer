@@ -69,6 +69,9 @@ export const buildThread = (
 
 const matchesFolder = (folder: Folder, messages: readonly Message[]): boolean => {
   switch (folder) {
+    case 'home':
+      // ホームは最近のやり取りを見せるので、全スレッドを対象にする
+      return true;
     case 'inbox':
       return messages.some(
         (message) =>

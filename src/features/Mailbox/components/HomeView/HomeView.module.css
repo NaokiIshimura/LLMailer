@@ -1,0 +1,246 @@
+/* スレッド一覧の枠を使わないので、2 ペイン分の幅いっぱいに広げる */
+.view {
+  display: flex;
+  flex-direction: column;
+  grid-column: span 2;
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.title {
+  margin: 0 0 2px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.composeButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 8px 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius);
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.composeButton:hover {
+  background: var(--color-accent-weak);
+}
+
+.body {
+  flex: 1;
+  padding: 16px 18px;
+  overflow-y: auto;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  text-align: left;
+}
+
+.stat:hover {
+  border-color: var(--color-accent);
+}
+
+.statCount {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* 未読が残っているときだけ目を引かせる */
+.statAccent {
+  color: var(--color-accent);
+}
+
+.statLabel {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 20px;
+  padding: 8px 12px;
+  background: var(--color-danger-weak);
+  border-radius: var(--radius);
+  color: var(--color-danger);
+  font-size: 13px;
+}
+
+.sectionTitle {
+  margin: 0 0 8px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.threads {
+  margin-bottom: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.thread {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+}
+
+.thread:last-child {
+  border-bottom: none;
+}
+
+.thread:hover {
+  background: var(--color-surface-muted);
+}
+
+.threadTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.threadSubject {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.unread {
+  color: var(--color-unread);
+  font-weight: 700;
+}
+
+.dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  background: var(--color-unread);
+  border-radius: 50%;
+}
+
+.threadDate {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.threadMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.threadSnippet {
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag {
+  flex-shrink: 0;
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.pendingTag {
+  background: var(--color-accent-weak);
+  color: var(--color-accent);
+}
+
+.failureTag {
+  background: var(--color-danger-weak);
+  color: var(--color-danger);
+}
+
+.agents {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.agent {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  text-align: left;
+}
+
+.agent:hover {
+  border-color: var(--color-accent);
+}
+
+.agentName {
+  font-weight: 600;
+}
+
+.agentMeta {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.empty,
+.error {
+  padding: 16px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.error {
+  color: var(--color-danger);
+}

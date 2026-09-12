@@ -2,6 +2,7 @@ export { ComposeWindow } from './ComposeWindow';
 export { ContactList } from './ContactList';
 export { ContactView } from './ContactView';
 export { FolderSidebar } from './FolderSidebar';
+export { HomeView } from './HomeView';
 export { Icon, type IconName } from './Icon';
 export { GlobalLoader, Spinner } from './Loader';
 export { MarkdownBody } from './MarkdownBody';

@@ -217,16 +217,18 @@ export interface Thread {
 
 /**
  * 表示するフォルダ。
- * 'home' は概要（ホーム）、'contacts' はアドレス帳で、どちらもスレッド一覧を出さない。
+ * 'home' は概要（ホーム）、'contacts' はアドレス帳、'settings' は設定で、
+ * いずれもスレッド一覧を出さない。
  * 'mailbox' は送受信を区別せず、すべてのスレッドを 1 つの一覧にまとめる。
  */
-export type Folder = 'home' | 'mailbox' | 'drafts' | 'contacts';
+export type Folder = 'home' | 'mailbox' | 'drafts' | 'contacts' | 'settings';
 
 export const FOLDER_LABELS: Readonly<Record<Folder, string>> = {
   home: 'ホーム',
   mailbox: 'メールボックス',
   drafts: '下書き',
   contacts: 'アドレス帳',
+  settings: '設定',
 };
 
 /** 表示順に並べたフォルダ */
@@ -235,7 +237,12 @@ export const FOLDERS: readonly Folder[] = [
   'mailbox',
   'drafts',
   'contacts',
+  'settings',
 ];
+
+/** スレッドの一覧と本文を出すフォルダか（ホーム・アドレス帳・設定は専用の画面を出す） */
+export const isThreadPaneFolder = (folder: Folder): boolean =>
+  folder === 'mailbox' || folder === 'drafts';
 
 export const NO_SUBJECT = '(件名なし)';
 

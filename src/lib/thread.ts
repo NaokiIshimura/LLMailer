@@ -144,6 +144,10 @@ export const countUnread = (messages: readonly Message[]): number =>
   messages.filter((message) => message.status === 'received' && !message.read)
     .length;
 
+/** 対応中（応答待ち）の件数 */
+export const countPending = (messages: readonly Message[]): number =>
+  messages.filter((message) => message.status === 'pending').length;
+
 /**
  * スレッド本文を「送信とその返信」のまとまり単位に分け、新しいまとまりを先頭にする。
  *

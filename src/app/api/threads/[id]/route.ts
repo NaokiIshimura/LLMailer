@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { errorResponse, unexpectedErrorResponse } from '@/lib/api/response';
 import {
+  failStalePendingMessages,
   listThreadMessages,
   markThreadAsRead,
 } from '@/lib/store/messageRepository';
@@ -16,6 +17,8 @@ export const GET = async (
 ): Promise<NextResponse> => {
   try {
     const { id } = await context.params;
+    // 前のプロセスが残した対応中は返信が届かないため、読み出す前に失敗へ倒す
+    await failStalePendingMessages();
     const messages = (await listThreadMessages(id)).filter(
       (message) => message.status !== 'draft'
     );

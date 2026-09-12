@@ -1,0 +1,192 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--color-overlay);
+  /* エージェント編集ダイアログ（50）の上に重ねる */
+  z-index: 60;
+}
+
+.window {
+  display: flex;
+  flex-direction: column;
+  width: min(520px, 100%);
+  max-height: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-window);
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--color-surface-muted);
+  border-bottom: 1px solid var(--color-border);
+  font-weight: 700;
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--color-text-muted);
+}
+
+.closeButton:hover {
+  background: var(--color-border);
+  color: var(--color-text);
+}
+
+.toolbar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 14px 0;
+}
+
+.toolButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 12px;
+}
+
+.toolButton:hover:not(:disabled) {
+  background: var(--color-surface-muted);
+}
+
+.toolButton:disabled {
+  opacity: 0.5;
+}
+
+.current {
+  margin: 8px 14px;
+  padding: 5px 8px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.entries {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 200px;
+  max-height: 320px;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  overflow-y: auto;
+}
+
+.entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: none;
+  border: none;
+  color: var(--color-text);
+  font-size: 13px;
+  text-align: left;
+}
+
+.entry:hover {
+  background: var(--color-surface-muted);
+}
+
+.entryName {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  margin: 0;
+  background: var(--color-danger-weak);
+  color: var(--color-danger);
+  font-size: 13px;
+}
+
+.errorButton {
+  margin-left: auto;
+  padding: 3px 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+}
+
+.selectButton {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  white-space: nowrap;
+  background: var(--color-accent);
+  border: none;
+  border-radius: var(--radius);
+  color: var(--color-on-accent);
+  font-weight: 700;
+}
+
+.selectButton:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.selectButton:disabled {
+  opacity: 0.6;
+}
+
+.cancelButton {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  white-space: nowrap;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.footerHint {
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  text-align: right;
+}

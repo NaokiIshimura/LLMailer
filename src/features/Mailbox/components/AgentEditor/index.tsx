@@ -1,11 +1,14 @@
 'use client';
 
+import { useState } from 'react';
+import { MODEL_OPTIONS, isCustomModel } from '@/lib/agents/models';
 import {
   AGENT_ACCESSES,
   AGENT_ACCESS_LABELS,
   type AgentAccess,
 } from '@/types/mail';
 import type { AgentForm } from '../../hooks';
+import { DirectoryPicker } from '../DirectoryPicker';
 import { Icon } from '../Icon';
 import { Spinner } from '../Loader';
 import styles from './AgentEditor.module.css';
@@ -19,8 +22,8 @@ interface AgentEditorProps {
   readonly onClose: () => void;
 }
 
-/** モデル名の候補（フル名も書けるよう、入力自体は自由にしておく） */
-const MODEL_SUGGESTIONS: readonly string[] = ['opus', 'sonnet', 'haiku'];
+/** プルダウンで「その他」を選んだことを表す値（モデル名としては使わない） */
+const CUSTOM_MODEL = '__custom__';
 
 const ACCESS_HINTS: Readonly<Record<AgentAccess, string>> = {
   full: 'このエージェント宛のメール 1 通で、作業ディレクトリのファイルが書き換わります。',
@@ -37,8 +40,20 @@ export const AgentEditor = ({
   onSave,
   onClose,
 }: AgentEditorProps) => {
+  const [pickingDirectory, setPickingDirectory] = useState(false);
+  // 候補に無いモデル名で保存されていたら、開いた時点で自由入力にしておく
+  const [customModel, setCustomModel] = useState(() =>
+    isCustomModel(form.model)
+  );
   const isNew = form.editing === null;
   const canSave = form.name.trim() !== '' && form.model.trim() !== '' && !saving;
+
+  /** 「その他」を選んだらフル名を入力してもらうため、モデル名は空に戻す */
+  const handleModelChange = (value: string): void => {
+    const custom = value === CUSTOM_MODEL;
+    setCustomModel(custom);
+    onChange({ model: custom ? '' : value });
+  };
 
   return (
     <div className={styles.overlay}>
@@ -74,22 +89,32 @@ export const AgentEditor = ({
             />
           </label>
 
-          <label className={styles.field}>
+          <div className={styles.field}>
             <span className={styles.label}>モデル</span>
-            <input
-              type="text"
-              className={`${styles.input} ${styles.mono}`}
-              list="agent-model-suggestions"
-              value={form.model}
-              placeholder="opus / sonnet / haiku またはフル名"
-              onChange={(event) => onChange({ model: event.target.value })}
-            />
-            <datalist id="agent-model-suggestions">
-              {MODEL_SUGGESTIONS.map((model) => (
-                <option key={model} value={model} />
-              ))}
-            </datalist>
-          </label>
+            <div className={styles.model}>
+              <select
+                className={styles.select}
+                value={customModel ? CUSTOM_MODEL : form.model}
+                onChange={(event) => handleModelChange(event.target.value)}
+              >
+                {MODEL_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+                <option value={CUSTOM_MODEL}>その他（フル名を入力）</option>
+              </select>
+              {customModel && (
+                <input
+                  type="text"
+                  className={`${styles.input} ${styles.mono}`}
+                  value={form.model}
+                  placeholder="claude-opus-5 のようなフル名"
+                  onChange={(event) => onChange({ model: event.target.value })}
+                />
+              )}
+            </div>
+          </div>
 
           <label className={styles.field}>
             <span className={styles.label}>説明</span>
@@ -128,18 +153,24 @@ export const AgentEditor = ({
             </div>
           </div>
 
-          <label className={styles.field}>
+          <div className={styles.field}>
             <span className={styles.label}>作業ディレクトリ</span>
-            <input
-              type="text"
-              className={`${styles.input} ${styles.mono}`}
-              value={form.workingDirectory}
-              placeholder="."
-              onChange={(event) =>
-                onChange({ workingDirectory: event.target.value })
-              }
-            />
-          </label>
+            <div className={styles.directory}>
+              <button
+                type="button"
+                className={`${styles.directoryButton} ${styles.mono}`}
+                onClick={() => setPickingDirectory(true)}
+              >
+                <Icon name="folder" size={14} />
+                <span className={styles.directoryPath}>
+                  {form.workingDirectory}
+                </span>
+              </button>
+              <p className={styles.hint}>
+                ボタンを押してディレクトリを選びます
+              </p>
+            </div>
+          </div>
 
           <label className={styles.field}>
             <span className={styles.label}>タイムアウト</span>
@@ -193,6 +224,17 @@ export const AgentEditor = ({
           </span>
         </footer>
       </div>
+
+      {pickingDirectory && (
+        <DirectoryPicker
+          initialPath={form.workingDirectory}
+          onSelect={(value) => {
+            onChange({ workingDirectory: value });
+            setPickingDirectory(false);
+          }}
+          onClose={() => setPickingDirectory(false)}
+        />
+      )}
     </div>
   );
 };

@@ -9,6 +9,10 @@ export {
   useDeleteMessage,
   type UseDeleteMessageResult,
 } from './useDeleteMessage';
+export {
+  useDirectoryBrowser,
+  type UseDirectoryBrowserResult,
+} from './useDirectoryBrowser';
 export { useJsonResource, type JsonResource } from './useJsonResource';
 export { useSendMessage, type UseSendMessageResult } from './useSendMessage';
 export { useTheme, type UseThemeResult } from './useTheme';

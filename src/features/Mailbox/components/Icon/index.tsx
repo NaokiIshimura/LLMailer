@@ -12,6 +12,8 @@ export type IconName =
   | 'plus'
   | 'edit'
   | 'trash'
+  | 'folder'
+  | 'arrowUp'
   | 'sun'
   | 'moon'
   | 'desktop';
@@ -81,6 +83,15 @@ const PATHS: Readonly<Record<IconName, ReactNode>> = {
       <path d="M3 6h18" />
       <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+    </>
+  ),
+  folder: (
+    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+  ),
+  arrowUp: (
+    <>
+      <path d="M12 19V5" />
+      <path d="m5 12 7-7 7 7" />
     </>
   ),
   sun: (

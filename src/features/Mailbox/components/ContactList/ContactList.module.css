@@ -87,7 +87,7 @@
   font-size: 11px;
 }
 
-.address,
+.model,
 .description {
   overflow: hidden;
   color: var(--color-text-muted);

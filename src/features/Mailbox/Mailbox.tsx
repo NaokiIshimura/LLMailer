@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toThreadExchanges } from '@/lib/thread';
 import {
-  ME_ADDRESS,
+  isOutgoingMessage,
   NO_SUBJECT,
   type Agent,
   type Message,
@@ -41,7 +41,7 @@ const PENDING_POLL_INTERVAL_MS = 3000;
 export const Mailbox = () => {
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   /** アドレス帳で選択中のエージェント */
-  const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   /** 直近の送信結果。一覧・詳細の再取得が終わるまで、この内容で表示を埋める */
   const [recentSend, setRecentSend] = useState<SendMessageResponse | null>(null);
 
@@ -62,20 +62,16 @@ export const Mailbox = () => {
   const agentEditor = useAgentEditor(agents.reload);
   useTheme();
 
-  const displayName = useCallback(
-    (address: string): string => {
-      if (address === ME_ADDRESS) {
-        return '自分';
-      }
-      return (
-        agents.agents.find((agent) => agent.address === address)?.name ?? address
-      );
-    },
+  /** 削除されたエージェントも過去のスレッドには残るため、見つからない場合の表示も用意する */
+  const agentName = useCallback(
+    (agentId: string): string =>
+      agents.agents.find((agent) => agent.id === agentId)?.name ??
+      '不明なエージェント',
     [agents.agents]
   );
 
   const selectedAgent =
-    agents.agents.find((agent) => agent.address === selectedAddress) ??
+    agents.agents.find((agent) => agent.id === selectedAgentId) ??
     agents.agents[0] ??
     null;
 
@@ -135,7 +131,7 @@ export const Mailbox = () => {
       ? {
           id: selectedThreadId ?? '',
           subject: headMessage.subject || NO_SUBJECT,
-          participants: headMessage.to,
+          participants: headMessage.agentIds,
           lastMessageAt: headMessage.createdAt,
           messageCount: shownMessages.length,
           unreadCount: 0,
@@ -178,7 +174,7 @@ export const Mailbox = () => {
     }
 
     const result = await sender.send({
-      to: draft.to,
+      agentIds: draft.agentIds,
       subject: draft.subject,
       body: draft.body,
       threadId,
@@ -209,7 +205,7 @@ export const Mailbox = () => {
       }
 
       const result = await sender.send({
-        to: [failed.from],
+        agentIds: failed.agentIds,
         subject: original.subject,
         body: original.body,
         threadId: failed.threadId,
@@ -257,18 +253,13 @@ export const Mailbox = () => {
 
   /** スレッドの最後のエージェント発言に返信する */
   const handleReply = useCallback(() => {
-    const target = [...shownMessages]
-      .reverse()
-      .find((message) => message.from !== ME_ADDRESS);
+    // エージェントの発言が無ければ、自分の送信（＝同じ宛先）に対する追記として返信する
+    const target =
+      [...shownMessages].reverse().find((message) => !isOutgoingMessage(message)) ??
+      shownMessages[shownMessages.length - 1];
 
     if (target) {
       compose.openReply(target);
-      return;
-    }
-
-    const sent = shownMessages[shownMessages.length - 1];
-    if (sent) {
-      compose.openReply({ ...sent, from: sent.to[0] ?? ME_ADDRESS });
     }
   }, [compose, shownMessages]);
 
@@ -314,21 +305,21 @@ export const Mailbox = () => {
   const handleSaveAgent = useCallback(async () => {
     const saved = await agentEditor.save();
     if (saved) {
-      setSelectedAddress(saved.address);
+      setSelectedAgentId(saved.id);
     }
   }, [agentEditor]);
 
   const handleDeleteAgent = useCallback(
     async (target: Agent) => {
       const confirmed = window.confirm(
-        `${target.name}（${target.address}）を削除しますか？\n送受信済みのメールは残ります。`
+        `${target.name}を削除しますか？\n送受信済みのメールは残ります。`
       );
       if (!confirmed) {
         return;
       }
 
-      if (await agentEditor.remove(target.address)) {
-        setSelectedAddress(null);
+      if (await agentEditor.remove(target.id)) {
+        setSelectedAgentId(null);
       }
     },
     [agentEditor]
@@ -341,7 +332,6 @@ export const Mailbox = () => {
         <span className={styles.tagline}>
           メールを書くように LLM へ指示を送る
         </span>
-        <span className={styles.me}>{ME_ADDRESS}</span>
         <button
           type="button"
           className={styles.reloadButton}
@@ -384,7 +374,7 @@ export const Mailbox = () => {
             pendingCount={pendingCount}
             loading={threads.loading}
             error={threads.error}
-            displayName={displayName}
+            agentName={agentName}
             onSelectFolder={threads.selectFolder}
             onSelectThread={handleSelectHomeThread}
             onCompose={compose.openNew}
@@ -393,10 +383,10 @@ export const Mailbox = () => {
           <>
             <ContactList
               agents={agents.agents}
-              selectedAddress={selectedAgent?.address ?? null}
+              selectedAgentId={selectedAgent?.id ?? null}
               query={threads.query}
               onChangeQuery={threads.changeQuery}
-              onSelect={setSelectedAddress}
+              onSelect={setSelectedAgentId}
               onCreate={agentEditor.openNew}
             />
             <ContactView
@@ -433,7 +423,7 @@ export const Mailbox = () => {
               loading={detail.loading}
               // 保存前のスレッドを取得しに行くと 404 になるため、表示できているうちは伏せる
               error={shownMessages.length > 0 ? null : detail.error}
-              displayName={displayName}
+              agentName={agentName}
               onReply={handleReply}
               onRetry={handleRetry}
               onCancelFailure={handleCancelFailure}
@@ -450,7 +440,7 @@ export const Mailbox = () => {
           sending={sender.sending}
           saving={compose.saving}
           error={sender.error}
-          displayName={displayName}
+          agentName={agentName}
           onChange={compose.update}
           onToggleRecipient={compose.toggleRecipient}
           onSend={handleSend}

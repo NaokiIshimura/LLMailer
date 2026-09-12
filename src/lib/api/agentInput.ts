@@ -1,14 +1,10 @@
 import {
-  ME_ADDRESS,
   PERMISSION_MODES,
   SETTING_SOURCES,
   type PermissionMode,
   type SettingSource,
   type UpdateAgentRequest,
 } from '@/types/mail';
-
-/** メールアドレスとして最低限成立している形か（空白なしの local@domain） */
-const ADDRESS_PATTERN = /^[^\s@]+@[^\s@]+$/;
 
 /** 必須の文字列。前後の空白は落とし、空なら不正とする */
 const requiredText = (value: unknown): string | null => {
@@ -20,19 +16,7 @@ const requiredText = (value: unknown): string | null => {
 };
 
 /**
- * エージェントのアドレスとして受け付けられるか。
- * ユーザー自身のアドレスは宛先の判定に使うため、名乗らせない。
- */
-export const parseAgentAddress = (value: unknown): string | null => {
-  const address = requiredText(value);
-  if (address === null || !ADDRESS_PATTERN.test(address)) {
-    return null;
-  }
-  return address === ME_ADDRESS ? null : address;
-};
-
-/**
- * リクエストボディをエージェントの設定として読み取る（アドレスは含まない）。
+ * リクエストボディをエージェントの設定として読み取る（ID は含まない）。
  * 形式が不正なら null を返す。
  *
  * 任意項目は「未指定」と「空」を区別せず undefined にして、

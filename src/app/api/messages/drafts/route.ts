@@ -3,7 +3,6 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { errorResponse, unexpectedErrorResponse } from '@/lib/api/response';
 import { saveMessage } from '@/lib/store/messageRepository';
 import {
-  ME_ADDRESS,
   NO_SUBJECT,
   type Message,
   type SaveDraftRequest,
@@ -15,8 +14,8 @@ const isSaveDraftRequest = (value: unknown): value is SaveDraftRequest => {
   }
   const body = value as Record<string, unknown>;
   return (
-    Array.isArray(body.to) &&
-    body.to.every((to) => typeof to === 'string') &&
+    Array.isArray(body.agentIds) &&
+    body.agentIds.every((id) => typeof id === 'string') &&
     typeof body.subject === 'string' &&
     typeof body.body === 'string'
   );
@@ -32,8 +31,7 @@ export const POST = async (request: NextRequest): Promise<NextResponse> => {
     const draft: Message = {
       id: payload.id ?? randomUUID(),
       threadId: payload.threadId ?? randomUUID(),
-      from: ME_ADDRESS,
-      to: payload.to,
+      agentIds: payload.agentIds,
       subject: payload.subject.trim() || NO_SUBJECT,
       body: payload.body,
       status: 'draft',

@@ -14,7 +14,7 @@ export interface DeliverInput {
   readonly isFirstTurn: boolean;
   /** 継続するセッション ID（初回は undefined） */
   readonly resumeSessionId?: string;
-  /** 同席している他エージェントの表示名（アドレス → 名前） */
+  /** 同席している他エージェントの表示名（エージェント ID → 名前） */
   readonly agentNames: ReadonlyMap<string, string>;
 }
 

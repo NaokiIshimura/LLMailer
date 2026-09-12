@@ -59,19 +59,22 @@ npm run dev
 許可ツール・無効化ツール・設定ソース・役割（システムプロンプト）を確認できる。
 詳細の「✉ メールを書く」から、その宛先を指定した状態で作成ウィンドウが開く。
 
-| アドレス | 名前 | モデル | 権限 |
-| --- | --- | --- | --- |
-| `opus@llmailer.local` | Opus（汎用） | opus | 読み取り専用 |
-| `worker@llmailer.local` | 作業担当 | opus | **フル権限**（ファイル変更・コマンド実行） |
-| `reviewer@llmailer.local` | コードレビュアー | opus | 読み取り専用 |
-| `haiku@llmailer.local` | Haiku（高速） | haiku | 読み取り専用 |
-| `translator@llmailer.local` | 翻訳担当 | sonnet | 読み取り専用 |
+| 名前 | モデル | 権限 |
+| --- | --- | --- |
+| Opus（汎用） | opus | 読み取り専用 |
+| 作業担当 | opus | **フル権限**（ファイル変更・コマンド実行） |
+| コードレビュアー | opus | 読み取り専用 |
+| Haiku（高速） | haiku | 読み取り専用 |
+| 翻訳担当 | sonnet | 読み取り専用 |
+
+エージェントにメールアドレスは無い。宛先は名前で選び、内部では画面に出さない ID で参照する。
+名前は画面で宛先を見分ける唯一の手がかりなので、既にある名前での追加・変更は弾かれる（409）。
 
 定義は `data/agents.json`（初回起動時に生成）。
 
 ```jsonc
 {
-  "address": "myrepo@llmailer.local",
+  "id": "b6f0…",                          // 追加時にサーバーが採番（手で書く必要はない）
   "name": "myrepo 担当",
   "model": "opus",                       // opus / sonnet / haiku またはフル名
   "systemPrompt": "…",                   // --append-system-prompt に渡す役割
@@ -137,6 +140,9 @@ src/
 | メソッド | パス | 用途 |
 | --- | --- | --- |
 | GET | `/api/agents` | エージェント一覧 |
+| POST | `/api/agents` | エージェント追加（ID はサーバーが採番） |
+| PUT | `/api/agents/[id]` | エージェント変更 |
+| DELETE | `/api/agents/[id]` | エージェント削除 |
 | GET | `/api/threads?folder=&q=` | スレッド一覧・下書き一覧・未読件数・対応中件数 |
 | GET | `/api/threads/[id]` | スレッド詳細 |
 | PATCH | `/api/threads/[id]` | スレッドを既読にする |
@@ -148,6 +154,9 @@ src/
 
 - `data/agents.json` — エージェント定義（コミット対象）
 - `data/messages.json` — 送受信したメッセージ（`.gitignore` 済み）
+
+メッセージは相手のエージェント（`agentIds`）だけを持ち、自分が出したものかどうかは
+配信状態（`status`）から導出する。アドレスで宛先を書いていた頃のデータは読み込み時に変換される。
 
 ## 開発
 

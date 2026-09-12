@@ -8,7 +8,8 @@ import { NO_SUBJECT, type Message } from '@/types/mail';
 export interface ComposeDraft {
   /** 下書きとして保存済みの場合の ID */
   readonly draftId?: string;
-  readonly to: readonly string[];
+  /** 宛先のエージェント ID */
+  readonly agentIds: readonly string[];
   readonly subject: string;
   readonly body: string;
   /** 返信の場合のスレッド ID */
@@ -19,7 +20,7 @@ export interface ComposeDraft {
 }
 
 const EMPTY_DRAFT: ComposeDraft = {
-  to: [],
+  agentIds: [],
   subject: '',
   body: '',
   locked: false,
@@ -28,14 +29,14 @@ const EMPTY_DRAFT: ComposeDraft = {
 export interface UseComposeResult {
   readonly draft: ComposeDraft | null;
   readonly saving: boolean;
-  readonly openNew: (to?: readonly string[]) => void;
+  readonly openNew: (agentIds?: readonly string[]) => void;
   readonly openReply: (message: Message) => void;
   readonly openDraft: (message: Message) => void;
   readonly close: () => void;
   /** 送信に失敗したときに、入力内容を保ったまま作成ウィンドウへ戻す */
   readonly restore: (draft: ComposeDraft) => void;
   readonly update: (patch: Partial<ComposeDraft>) => void;
-  readonly toggleRecipient: (address: string) => void;
+  readonly toggleRecipient: (agentId: string) => void;
   /** 下書きとして保存し、作成ウィンドウを閉じる */
   readonly saveDraft: () => Promise<void>;
 }
@@ -45,13 +46,14 @@ export const useCompose = (onDraftSaved: () => void): UseComposeResult => {
   const [draft, setDraft] = useState<ComposeDraft | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const openNew = useCallback((to: readonly string[] = []) => {
-    setDraft({ ...EMPTY_DRAFT, to });
+  const openNew = useCallback((agentIds: readonly string[] = []) => {
+    setDraft({ ...EMPTY_DRAFT, agentIds });
   }, []);
 
+  // 返信の宛先は、そのメッセージの相手（受信なら差出人、送信なら同じ宛先）
   const openReply = useCallback((message: Message) => {
     setDraft({
-      to: [message.from],
+      agentIds: message.agentIds,
       subject: message.subject,
       body: '',
       threadId: message.threadId,
@@ -63,7 +65,7 @@ export const useCompose = (onDraftSaved: () => void): UseComposeResult => {
   const openDraft = useCallback((message: Message) => {
     setDraft({
       draftId: message.id,
-      to: message.to,
+      agentIds: message.agentIds,
       subject: message.subject === NO_SUBJECT ? '' : message.subject,
       body: message.body,
       locked: false,
@@ -80,17 +82,17 @@ export const useCompose = (onDraftSaved: () => void): UseComposeResult => {
     setDraft((current) => (current ? { ...current, ...patch } : current));
   }, []);
 
-  const toggleRecipient = useCallback((address: string) => {
+  const toggleRecipient = useCallback((agentId: string) => {
     setDraft((current) => {
       if (!current || current.locked) {
         return current;
       }
-      const selected = current.to.includes(address);
+      const selected = current.agentIds.includes(agentId);
       return {
         ...current,
-        to: selected
-          ? current.to.filter((item) => item !== address)
-          : [...current.to, address],
+        agentIds: selected
+          ? current.agentIds.filter((item) => item !== agentId)
+          : [...current.agentIds, agentId],
       };
     });
   }, []);
@@ -105,7 +107,7 @@ export const useCompose = (onDraftSaved: () => void): UseComposeResult => {
         method: 'POST',
         body: JSON.stringify({
           id: draft.draftId,
-          to: draft.to,
+          agentIds: draft.agentIds,
           subject: draft.subject,
           body: draft.body,
           threadId: draft.threadId,

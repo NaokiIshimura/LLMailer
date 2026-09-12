@@ -18,10 +18,11 @@ interface HomeViewProps {
   readonly pendingCount: number;
   readonly loading: boolean;
   readonly error: string | null;
-  readonly displayName: (address: string) => string;
+  /** エージェント ID → 表示名 */
+  readonly agentName: (agentId: string) => string;
   readonly onSelectFolder: (folder: Folder) => void;
   readonly onSelectThread: (threadId: string) => void;
-  readonly onCompose: (to?: readonly string[]) => void;
+  readonly onCompose: (agentIds?: readonly string[]) => void;
 }
 
 /** メールボックスなどに入る前の概要画面 */
@@ -33,7 +34,7 @@ export const HomeView = ({
   pendingCount,
   loading,
   error,
-  displayName,
+  agentName,
   onSelectFolder,
   onSelectThread,
   onCompose,
@@ -138,7 +139,7 @@ export const HomeView = ({
                   </span>
                 </div>
                 <div className={styles.threadMeta}>
-                  {thread.participants.map(displayName).join(', ')}
+                  {thread.participants.map(agentName).join(', ')}
                   {thread.hasPending && (
                     <span className={`${styles.tag} ${styles.pendingTag}`}>
                       <span className={styles.pendingPulse} aria-hidden="true" />
@@ -164,10 +165,10 @@ export const HomeView = ({
           <div className={styles.agents}>
             {agents.map((agent) => (
               <button
-                key={agent.address}
+                key={agent.id}
                 type="button"
                 className={styles.agent}
-                onClick={() => onCompose([agent.address])}
+                onClick={() => onCompose([agent.id])}
               >
                 <span className={styles.agentName}>{agent.name}</span>
                 <span className={styles.agentMeta}>

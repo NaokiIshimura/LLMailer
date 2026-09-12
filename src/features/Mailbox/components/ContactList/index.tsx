@@ -1,6 +1,6 @@
 'use client';
 
-import { isDefaultAgentAddress } from '@/lib/agents/defaultAgents';
+import { isDefaultAgentId } from '@/lib/agents/defaultAgents';
 import type { Agent } from '@/types/mail';
 import { Icon } from '../Icon';
 import { PermissionBadge } from '../PermissionBadge';
@@ -8,10 +8,10 @@ import styles from './ContactList.module.css';
 
 interface ContactListProps {
   readonly agents: readonly Agent[];
-  readonly selectedAddress: string | null;
+  readonly selectedAgentId: string | null;
   readonly query: string;
   readonly onChangeQuery: (query: string) => void;
-  readonly onSelect: (address: string) => void;
+  readonly onSelect: (agentId: string) => void;
   readonly onCreate: () => void;
 }
 
@@ -20,7 +20,7 @@ const matches = (agent: Agent, query: string): boolean => {
     return true;
   }
   const keyword = query.toLowerCase();
-  return [agent.name, agent.address, agent.description ?? '', agent.model].some(
+  return [agent.name, agent.description ?? '', agent.model].some(
     (value) => value.toLowerCase().includes(keyword)
   );
 };
@@ -28,7 +28,7 @@ const matches = (agent: Agent, query: string): boolean => {
 /** アドレス帳の一覧（スレッド一覧と同じ位置に表示する） */
 export const ContactList = ({
   agents,
-  selectedAddress,
+  selectedAgentId,
   query,
   onChangeQuery,
   onSelect,
@@ -42,7 +42,7 @@ export const ContactList = ({
         <input
           type="search"
           className={styles.search}
-          placeholder="名前・アドレス・モデルを検索"
+          placeholder="名前・説明・モデルを検索"
           value={query}
           onChange={(event) => onChangeQuery(event.target.value)}
         />
@@ -59,21 +59,21 @@ export const ContactList = ({
 
         {shown.map((agent) => (
           <button
-            key={agent.address}
+            key={agent.id}
             type="button"
             className={`${styles.item} ${
-              agent.address === selectedAddress ? styles.selected : ''
+              agent.id === selectedAgentId ? styles.selected : ''
             }`}
-            onClick={() => onSelect(agent.address)}
+            onClick={() => onSelect(agent.id)}
           >
             <div className={styles.topRow}>
               <span className={styles.name}>{agent.name}</span>
               <PermissionBadge agent={agent} />
-              {isDefaultAgentAddress(agent.address) && (
+              {isDefaultAgentId(agent.id) && (
                 <span className={styles.defaultTag}>既定</span>
               )}
             </div>
-            <div className={styles.address}>{agent.address}</div>
+            <div className={styles.model}>{agent.model}</div>
             {agent.description && (
               <div className={styles.description}>{agent.description}</div>
             )}

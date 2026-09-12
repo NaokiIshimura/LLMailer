@@ -6,7 +6,7 @@ import {
   formatDuration,
   formatTokens,
 } from '@/lib/format';
-import { ME_ADDRESS, type Message } from '@/types/mail';
+import { isOutgoingMessage, type Message } from '@/types/mail';
 import { Icon } from '../Icon';
 import { Spinner } from '../Loader';
 import { MarkdownBody } from '../MarkdownBody';
@@ -14,8 +14,8 @@ import styles from './MessageItem.module.css';
 
 interface MessageItemProps {
   readonly message: Message;
-  /** アドレス → 表示名 */
-  readonly displayName: (address: string) => string;
+  /** エージェント ID → 表示名 */
+  readonly agentName: (agentId: string) => string;
   readonly onRetry?: (message: Message) => void;
   /** 再送せずに失敗した配信を取り消す */
   readonly onCancel?: (message: Message) => void;
@@ -26,25 +26,27 @@ interface MessageItemProps {
 /** 1 通のメッセージ */
 export const MessageItem = ({
   message,
-  displayName,
+  agentName,
   onRetry,
   onCancel,
   canceling = false,
 }: MessageItemProps) => {
-  const fromMe = message.from === ME_ADDRESS;
+  const fromMe = isOutgoingMessage(message);
+  // やり取りは「自分 ↔ エージェント」なので、向きだけで差出人と宛先が決まる
+  const agents = message.agentIds.map(agentName).join(', ');
+  const from = fromMe ? '自分' : agents;
+  const to = fromMe ? agents : '自分';
 
   return (
     <article
       className={`${styles.message} ${fromMe ? styles.fromMe : ''}`}
-      aria-label={`${displayName(message.from)} からのメッセージ`}
+      aria-label={`${from} からのメッセージ`}
     >
       <header className={styles.header}>
         <div className={styles.route}>
-          <span className={styles.from}>{displayName(message.from)}</span>
+          <span className={styles.from}>{from}</span>
           <span className={styles.arrow}>→</span>
-          <span className={styles.to}>
-            {message.to.map(displayName).join(', ')}
-          </span>
+          <span className={styles.to}>{to}</span>
           {!message.read && message.status === 'received' && (
             <span className={`${styles.badge} ${styles.unreadBadge}`}>未読</span>
           )}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
+import { toThreadExchanges } from '@/lib/thread';
 import {
   ME_ADDRESS,
   NO_SUBJECT,
@@ -119,6 +120,12 @@ export const Mailbox = () => {
       ...optimisticMessages,
     ],
     [detail.messages, recentMessages, optimisticMessages]
+  );
+
+  /** 本文は「送信とその返信」を 1 まとまりにして、新しいものから並べる */
+  const shownExchanges = useMemo(
+    () => toThreadExchanges(shownMessages),
+    [shownMessages]
   );
 
   const headMessage = pendingForThread[0] ?? recentSend?.sent;
@@ -328,7 +335,7 @@ export const Mailbox = () => {
 
             <ThreadView
               thread={shownThread}
-              messages={shownMessages}
+              exchanges={shownExchanges}
               pendingDeliveries={pendingForThread}
               loading={detail.loading}
               // 保存前のスレッドを取得しに行くと 404 になるため、表示できているうちは伏せる

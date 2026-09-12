@@ -1,5 +1,6 @@
 'use client';
 
+import { Fragment } from 'react';
 import type { Message, Thread } from '@/types/mail';
 import { Icon } from '../Icon';
 import { Spinner } from '../Loader';
@@ -9,7 +10,8 @@ import styles from './ThreadView.module.css';
 
 interface ThreadViewProps {
   readonly thread: Thread | null;
-  readonly messages: readonly Message[];
+  /** 「送信とその返信」のまとまり。新しいものが先頭 */
+  readonly exchanges: readonly (readonly Message[])[];
   /** このスレッドで配信中の送信 */
   readonly pendingDeliveries: readonly PendingDelivery[];
   readonly loading: boolean;
@@ -22,7 +24,7 @@ interface ThreadViewProps {
 /** スレッド本文 */
 export const ThreadView = ({
   thread,
-  messages,
+  exchanges,
   pendingDeliveries,
   loading,
   error,
@@ -59,6 +61,12 @@ export const ThreadView = ({
     );
   }
 
+  const pending = pendingDeliveries.map((delivery) => (
+    <p key={delivery.id} className={styles.pending}>
+      <Spinner /> {delivery.to.map(displayName).join(', ')} へ配信中…
+    </p>
+  ));
+
   return (
     <section className={styles.view}>
       <header className={styles.header}>
@@ -76,19 +84,22 @@ export const ThreadView = ({
       </header>
 
       <div className={styles.messages}>
-        {messages.map((message) => (
-          <MessageItem
-            key={message.id}
-            message={message}
-            displayName={displayName}
-            onRetry={message.status === 'failed' ? onRetry : undefined}
-          />
-        ))}
+        {/* 送信済みのまとまりがまだ無いあいだも配信中を見せる */}
+        {exchanges.length === 0 && pending}
 
-        {pendingDeliveries.map((pending) => (
-          <p key={pending.id} className={styles.pending}>
-            <Spinner /> {pending.to.map(displayName).join(', ')} へ配信中…
-          </p>
+        {exchanges.map((exchange, index) => (
+          <Fragment key={exchange[0].id}>
+            {exchange.map((message) => (
+              <MessageItem
+                key={message.id}
+                message={message}
+                displayName={displayName}
+                onRetry={message.status === 'failed' ? onRetry : undefined}
+              />
+            ))}
+            {/* 配信中の返信は、その送信のすぐ下に置く */}
+            {index === 0 && pending}
+          </Fragment>
         ))}
       </div>
     </section>

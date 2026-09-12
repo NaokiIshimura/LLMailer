@@ -131,34 +131,5 @@
       "project",
       "local"
     ]
-  },
-  {
-    "id": "d86061f1-d141-433b-98ee-b1c6a379e258",
-    "name": "test",
-    "model": "opus",
-    "workingDirectory": ".",
-    "permissionMode": "manual",
-    "allowedTools": [
-      "Read",
-      "Glob",
-      "Grep",
-      "WebSearch",
-      "WebFetch"
-    ],
-    "disallowedTools": [
-      "Write",
-      "Edit",
-      "MultiEdit",
-      "NotebookEdit",
-      "Bash",
-      "BashOutput",
-      "KillShell",
-      "KillBash",
-      "Task"
-    ],
-    "settingSources": [
-      "project",
-      "local"
-    ]
   }
 ]

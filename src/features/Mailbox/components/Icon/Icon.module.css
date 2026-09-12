@@ -1,0 +1,5 @@
+.icon {
+  flex-shrink: 0;
+  /* テキストと並べたときに視覚的な中心が揃うように少し下げる */
+  vertical-align: -0.15em;
+}

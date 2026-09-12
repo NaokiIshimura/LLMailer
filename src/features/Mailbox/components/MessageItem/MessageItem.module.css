@@ -1,0 +1,105 @@
+.message {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.fromMe {
+  background: var(--color-surface-muted);
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.route {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.from {
+  font-weight: 700;
+}
+
+.arrow,
+.to {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.body {
+  margin: 0;
+}
+
+.badge {
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.unreadBadge {
+  background: var(--color-accent-weak);
+  color: var(--color-accent);
+}
+
+.failure {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--color-danger-weak);
+  border-radius: var(--radius);
+  color: var(--color-danger);
+}
+
+.failureText {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.retryButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  padding: 6px 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius);
+  color: var(--color-danger);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pending {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-muted);
+}
+
+.denied {
+  margin: 8px 0 0;
+  padding: 6px 10px;
+  background: var(--color-surface-muted);
+  border-left: 3px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 12px;
+}

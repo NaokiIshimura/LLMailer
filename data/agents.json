@@ -1,0 +1,135 @@
+[
+  {
+    "address": "opus@llmailer.local",
+    "name": "Opus（汎用）",
+    "model": "opus",
+    "description": "調べもの・相談。ファイルは読むだけ",
+    "systemPrompt": "幅広い相談に応じる汎用アシスタントです。要点を押さえて簡潔に答えてください。",
+    "workingDirectory": ".",
+    "permissionMode": "manual",
+    "allowedTools": [
+      "Read",
+      "Glob",
+      "Grep",
+      "WebSearch",
+      "WebFetch"
+    ],
+    "disallowedTools": [
+      "Write",
+      "Edit",
+      "MultiEdit",
+      "NotebookEdit",
+      "Bash",
+      "BashOutput",
+      "KillShell",
+      "KillBash",
+      "Task"
+    ],
+    "settingSources": [
+      "project",
+      "local"
+    ]
+  },
+  {
+    "address": "worker@llmailer.local",
+    "name": "作業担当（フル権限）",
+    "model": "opus",
+    "description": "実装・修正を実際に行う。ファイルを変更できる",
+    "systemPrompt": "依頼された作業を実際に行う担当です。作業を終えたら、何をどう変更したかを返信してください。",
+    "workingDirectory": ".",
+    "permissionMode": "bypassPermissions"
+  },
+  {
+    "address": "reviewer@llmailer.local",
+    "name": "コードレビュアー",
+    "model": "opus",
+    "description": "コードを読んで問題点を指摘する",
+    "systemPrompt": "コードレビュアーです。バグ・可読性・保守性の観点で問題点を指摘し、修正案を添えてください。良い点の列挙より、具体的な指摘を優先してください。",
+    "workingDirectory": ".",
+    "permissionMode": "manual",
+    "allowedTools": [
+      "Read",
+      "Glob",
+      "Grep",
+      "WebSearch",
+      "WebFetch"
+    ],
+    "disallowedTools": [
+      "Write",
+      "Edit",
+      "MultiEdit",
+      "NotebookEdit",
+      "Bash",
+      "BashOutput",
+      "KillShell",
+      "KillBash",
+      "Task"
+    ],
+    "settingSources": [
+      "project",
+      "local"
+    ]
+  },
+  {
+    "address": "haiku@llmailer.local",
+    "name": "Haiku（高速）",
+    "model": "haiku",
+    "description": "短時間で要点だけ返す",
+    "systemPrompt": "速さを優先し、要点だけを短く返してください。前置きや締めの挨拶は書かないでください。",
+    "workingDirectory": ".",
+    "permissionMode": "manual",
+    "allowedTools": [
+      "Read",
+      "Glob",
+      "Grep",
+      "WebSearch",
+      "WebFetch"
+    ],
+    "disallowedTools": [
+      "Write",
+      "Edit",
+      "MultiEdit",
+      "NotebookEdit",
+      "Bash",
+      "BashOutput",
+      "KillShell",
+      "KillBash",
+      "Task"
+    ],
+    "settingSources": [
+      "project",
+      "local"
+    ]
+  },
+  {
+    "address": "translator@llmailer.local",
+    "name": "翻訳担当",
+    "model": "sonnet",
+    "description": "日英の翻訳のみを返す",
+    "systemPrompt": "翻訳担当です。日本語が届いたら英語に、英語が届いたら日本語に翻訳し、翻訳結果のみを返してください。解説は書かないでください。",
+    "workingDirectory": ".",
+    "permissionMode": "manual",
+    "allowedTools": [
+      "Read",
+      "Glob",
+      "Grep",
+      "WebSearch",
+      "WebFetch"
+    ],
+    "disallowedTools": [
+      "Write",
+      "Edit",
+      "MultiEdit",
+      "NotebookEdit",
+      "Bash",
+      "BashOutput",
+      "KillShell",
+      "KillBash",
+      "Task"
+    ],
+    "settingSources": [
+      "project",
+      "local"
+    ]
+  }
+]

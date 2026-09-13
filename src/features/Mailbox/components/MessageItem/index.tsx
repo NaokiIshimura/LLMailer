@@ -21,6 +21,11 @@ interface MessageItemProps {
   readonly onCancel?: (message: Message) => void;
   /** 失敗した配信の片付け（再送後の削除・取り消し）リクエスト中か */
   readonly dismissing?: boolean;
+  /**
+   * 本文に書かれたファイルパスを開く。
+   * 相対パスの基準になるエージェントも一緒に渡す。
+   */
+  readonly onOpenFile?: (filePath: string, agentId?: string) => void;
 }
 
 /** 1 通のメッセージ */
@@ -30,12 +35,15 @@ export const MessageItem = ({
   onRetry,
   onCancel,
   dismissing = false,
+  onOpenFile,
 }: MessageItemProps) => {
   const fromMe = isOutgoingMessage(message);
   // やり取りは「自分 ↔ エージェント」なので、向きだけで差出人と宛先が決まる
   const agents = message.agentIds.map(agentName).join(', ');
   const from = fromMe ? '自分' : agents;
   const to = fromMe ? agents : '自分';
+  // 本文のパスは、やり取りしているエージェントの作業ディレクトリから辿る
+  const baseAgentId = message.agentIds[0];
 
   return (
     <article
@@ -120,7 +128,14 @@ export const MessageItem = ({
       ) : (
         <>
           <div className={styles.body}>
-            <MarkdownBody body={message.body} />
+            <MarkdownBody
+              body={message.body}
+              onOpenFile={
+                onOpenFile
+                  ? (filePath) => onOpenFile(filePath, baseAgentId)
+                  : undefined
+              }
+            />
           </div>
           {message.run?.deniedTools && (
             <p className={styles.denied}>

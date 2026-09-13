@@ -18,6 +18,7 @@ export {
   useDirectoryBrowser,
   type UseDirectoryBrowserResult,
 } from './useDirectoryBrowser';
+export { useFileViewer, type UseFileViewerResult } from './useFileViewer';
 export { useJsonResource, type JsonResource } from './useJsonResource';
 export {
   useNotificationSound,

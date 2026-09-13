@@ -50,3 +50,11 @@ export const formatDuration = (durationMs: number): string =>
 /** トークン数 */
 export const formatTokens = (tokens: number): string =>
   tokens.toLocaleString('ja-JP');
+
+/** ファイルサイズ */
+export const formatFileSize = (bytes: number): string =>
+  bytes < 1024
+    ? `${bytes}B`
+    : bytes < 1024 * 1024
+      ? `${(bytes / 1024).toFixed(1)}KB`
+      : `${(bytes / (1024 * 1024)).toFixed(1)}MB`;

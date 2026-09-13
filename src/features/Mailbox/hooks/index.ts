@@ -23,6 +23,10 @@ export {
   type UseDirectoryBrowserResult,
 } from './useDirectoryBrowser';
 export { useFileViewer, type UseFileViewerResult } from './useFileViewer';
+export {
+  useGroupDefaultAgents,
+  type UseGroupDefaultAgentsResult,
+} from './useGroupDefaultAgents';
 export { useJsonResource, type JsonResource } from './useJsonResource';
 export {
   useNotificationSound,

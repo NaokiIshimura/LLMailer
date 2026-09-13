@@ -1,10 +1,10 @@
 'use client';
 
+import type { AgentMailbox } from '@/lib/agentMailbox';
 import {
   FOLDER_LABELS,
   MAIL_FOLDERS,
   TOOL_FOLDERS,
-  type Agent,
   type Folder,
 } from '@/types/mail';
 import { Icon } from '../Icon';
@@ -12,9 +12,12 @@ import styles from './FolderSidebar.module.css';
 
 interface FolderSidebarProps {
   readonly folder: Folder;
-  /** 宛先ごとの一覧を出しているエージェント（出していなければ null） */
-  readonly selectedAgentId: string | null;
-  readonly agents: readonly Agent[];
+  /** 宛先ごとの一覧を出しているメールボックス（出していなければ null） */
+  readonly selectedMailboxKey: string | null;
+  /** 宛先ごとのメールボックス（設定によりデフォルトのぶんは 1 つにまとまる） */
+  readonly mailboxes: readonly AgentMailbox[];
+  /** アドレス帳に載っているエージェントの数 */
+  readonly agentCount: number;
   readonly unreadCount: number;
   /** 対応中（応答待ち）の件数 */
   readonly pendingCount: number;
@@ -23,9 +26,16 @@ interface FolderSidebarProps {
   /** 宛先ごとの対応中件数（エージェント ID → 件数） */
   readonly agentPendingCounts: Readonly<Record<string, number>>;
   readonly onSelectFolder: (folder: Folder) => void;
-  readonly onSelectAgent: (agentId: string) => void;
+  readonly onSelectMailbox: (mailbox: AgentMailbox) => void;
   readonly onCompose: (to?: readonly string[]) => void;
 }
+
+/** メールボックスに含まれる宛先ぶんを合計する（まとめたものは全員ぶん） */
+const sumCounts = (
+  counts: Readonly<Record<string, number>>,
+  agentIds: readonly string[]
+): number =>
+  agentIds.reduce((total, agentId) => total + (counts[agentId] ?? 0), 0);
 
 /**
  * フォルダの切り替え（アドレス帳もフォルダの 1 つとして扱う）。
@@ -34,25 +44,26 @@ interface FolderSidebarProps {
  */
 export const FolderSidebar = ({
   folder,
-  selectedAgentId,
-  agents,
+  selectedMailboxKey,
+  mailboxes,
+  agentCount,
   unreadCount,
   pendingCount,
   draftCount,
   agentUnreadCounts,
   agentPendingCounts,
   onSelectFolder,
-  onSelectAgent,
+  onSelectMailbox,
   onCompose,
 }: FolderSidebarProps) => {
   /** 宛先で絞り込んでいるあいだは、元のフォルダを選択中にしない */
   const folderClassName = (item: Folder): string =>
     `${styles.item} ${
-      folder === item && selectedAgentId === null ? styles.active : ''
+      folder === item && selectedMailboxKey === null ? styles.active : ''
     }`;
 
   const selected = (item: Folder): boolean =>
-    folder === item && selectedAgentId === null;
+    folder === item && selectedMailboxKey === null;
 
   return (
     <nav className={styles.sidebar}>
@@ -97,34 +108,37 @@ export const FolderSidebar = ({
 
       <hr className={styles.separator} />
 
-      {agents.map((agent) => (
-        <button
-          key={agent.id}
-          type="button"
-          className={`${styles.item} ${
-            selectedAgentId === agent.id ? styles.active : ''
-          }`}
-          onClick={() => onSelectAgent(agent.id)}
-          aria-current={selectedAgentId === agent.id}
-          title={agent.description ?? agent.name}
-        >
-          <span className={styles.agentName}>{agent.name}</span>
-          {/* 宛先ごとの対応中も、メールボックスと同じくドットだけで示す */}
-          {((agentPendingCounts[agent.id] ?? 0) > 0 ||
-            (agentUnreadCounts[agent.id] ?? 0) > 0) && (
-            <span className={styles.trailing}>
-              {(agentPendingCounts[agent.id] ?? 0) > 0 && (
-                <span className={styles.pendingDot} aria-label="対応中" />
-              )}
-              {(agentUnreadCounts[agent.id] ?? 0) > 0 && (
-                <span className={styles.badge}>
-                  {agentUnreadCounts[agent.id]}
-                </span>
-              )}
-            </span>
-          )}
-        </button>
-      ))}
+      {mailboxes.map((mailbox) => {
+        // まとめたメールボックスは、含まれる宛先ぶんを合わせて出す
+        const mailboxPending = sumCounts(agentPendingCounts, mailbox.agentIds);
+        const mailboxUnread = sumCounts(agentUnreadCounts, mailbox.agentIds);
+
+        return (
+          <button
+            key={mailbox.key}
+            type="button"
+            className={`${styles.item} ${
+              selectedMailboxKey === mailbox.key ? styles.active : ''
+            }`}
+            onClick={() => onSelectMailbox(mailbox)}
+            aria-current={selectedMailboxKey === mailbox.key}
+            title={mailbox.description ?? mailbox.name}
+          >
+            <span className={styles.agentName}>{mailbox.name}</span>
+            {/* 宛先ごとの対応中も、メールボックスと同じくドットだけで示す */}
+            {(mailboxPending > 0 || mailboxUnread > 0) && (
+              <span className={styles.trailing}>
+                {mailboxPending > 0 && (
+                  <span className={styles.pendingDot} aria-label="対応中" />
+                )}
+                {mailboxUnread > 0 && (
+                  <span className={styles.badge}>{mailboxUnread}</span>
+                )}
+              </span>
+            )}
+          </button>
+        );
+      })}
 
       <hr className={styles.separator} />
 
@@ -137,8 +151,8 @@ export const FolderSidebar = ({
           aria-current={selected(item)}
         >
           <span className={styles.label}>{FOLDER_LABELS[item]}</span>
-          {item === 'contacts' && agents.length > 0 && (
-            <span className={styles.countBadge}>{agents.length}</span>
+          {item === 'contacts' && agentCount > 0 && (
+            <span className={styles.countBadge}>{agentCount}</span>
           )}
         </button>
       ))}

@@ -19,7 +19,7 @@ interface ContactViewProps {
 
 const formatTimeout = (timeoutMs?: number): string =>
   timeoutMs === undefined
-    ? '既定（10 分）'
+    ? 'デフォルト（10 分）'
     : `${Math.round(timeoutMs / 1000)} 秒`;
 
 /** アドレス帳で選んだエージェントの詳細 */
@@ -41,7 +41,7 @@ export const ContactView = ({
   }
 
   const fullAccess = isFullAccessAgent(agent);
-  // 既定のエージェントはアプリの土台なので、画面からは変更・削除させない
+  // デフォルトのエージェントはアプリの土台なので、画面からは変更・削除させない
   const { isDefault } = agent;
 
   return (
@@ -51,7 +51,7 @@ export const ContactView = ({
           <h1 className={styles.title}>
             {agent.name}
             <PermissionBadge agent={agent} />
-            {isDefault && <span className={styles.defaultTag}>既定</span>}
+            {isDefault && <span className={styles.defaultTag}>デフォルト</span>}
           </h1>
           {agent.description && (
             <p className={styles.description}>{agent.description}</p>
@@ -154,7 +154,7 @@ export const ContactView = ({
               <td className={styles.mono}>
                 {agent.settingSources && agent.settingSources.length > 0
                   ? agent.settingSources.join(', ')
-                  : 'user, project, local（既定）'}
+                  : 'user, project, local（デフォルト）'}
               </td>
             </tr>
             <tr>
@@ -173,7 +173,7 @@ export const ContactView = ({
 
         <p className={styles.hint}>
           {isDefault
-            ? '既定のエージェントのため、画面からは変更・削除できません。'
+            ? 'デフォルトのエージェントのため、画面からは変更・削除できません。'
             : '編集で変えられない項目（許可ツールなど）は data/agents/user.json で調整できます。'}
         </p>
       </div>

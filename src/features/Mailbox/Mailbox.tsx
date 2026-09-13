@@ -1,12 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { toAgentMailboxes, type AgentMailbox } from '@/lib/agentMailbox';
 import { toThreadExchanges } from '@/lib/thread';
 import {
   isOutgoingMessage,
   isThreadPaneFolder,
   NO_SUBJECT,
   type Agent,
+  type Folder,
   type Message,
   type SendMessageResponse,
   type Thread,
@@ -32,6 +34,7 @@ import {
   useCompose,
   useDeleteMessage,
   useFileViewer,
+  useGroupDefaultAgents,
   useNotificationSound,
   useReplyChime,
   useSendMessage,
@@ -71,6 +74,8 @@ export const Mailbox = () => {
   const agentEditor = useAgentEditor(agents.reload);
   const theme = useTheme();
   const notificationSound = useNotificationSound();
+  /** 左ペインでデフォルトのエージェントを 1 つにまとめるかの設定 */
+  const groupDefaultAgents = useGroupDefaultAgents();
   /** 本文に書かれた実行計画などの md ファイルを、その場で読むためのビューア */
   const fileViewer = useFileViewer();
 
@@ -90,13 +95,56 @@ export const Mailbox = () => {
     agents.agents[0] ??
     null;
 
-  /** サイドバーで宛先ごとの一覧を開いているエージェント */
-  const listedAgent =
-    agents.agents.find((agent) => agent.id === threads.agentId) ?? null;
+  /** サイドバーに並べる宛先ごとのメールボックス（設定によりデフォルトのぶんはまとまる） */
+  const mailboxes = useMemo(
+    () => toAgentMailboxes(agents.agents, groupDefaultAgents.grouped),
+    [agents.agents, groupDefaultAgents.grouped]
+  );
+
+  /** サイドバーで一覧を開いているメールボックス */
+  const listedMailbox =
+    mailboxes.find((mailbox) => mailbox.key === threads.mailboxKey) ?? null;
 
   const selectThread = useCallback((threadId: string) => {
     setSelectedThreadId(threadId);
   }, []);
+
+  /**
+   * 見ている場所を移ったら、開いていたスレッドは閉じる。
+   *
+   * 選択中のスレッドは一覧に無くても先頭に足して見せているため、
+   * 開いたままにすると移った先の一覧にも出てしまう。
+   */
+  const handleSelectFolder = useCallback(
+    (next: Folder) => {
+      setSelectedThreadId(null);
+      threads.selectFolder(next);
+    },
+    [threads]
+  );
+
+  const handleSelectMailbox = useCallback(
+    (mailbox: AgentMailbox) => {
+      setSelectedThreadId(null);
+      threads.selectMailbox(mailbox.key, mailbox.agentIds);
+    },
+    [threads]
+  );
+
+  /**
+   * まとめる設定を切り替えると、開いていたメールボックスが無くなることがある。
+   * 絞り込みだけが残ると何の一覧か分からなくなるため、メールボックスへ戻す。
+   */
+  const { mailboxKey, selectFolder } = threads;
+  useEffect(() => {
+    if (
+      mailboxKey !== null &&
+      mailboxes.length > 0 &&
+      !mailboxes.some((mailbox) => mailbox.key === mailboxKey)
+    ) {
+      selectFolder('mailbox');
+    }
+  }, [mailboxKey, mailboxes, selectFolder]);
 
   /** 配信はサーバー側で続くため、対応中があるあいだは返信が届いたかを見に行く */
   const { pendingCount, reload: reloadThreads } = threads;
@@ -408,15 +456,16 @@ export const Mailbox = () => {
       <div className={styles.panes}>
         <FolderSidebar
           folder={threads.folder}
-          selectedAgentId={threads.agentId}
-          agents={agents.agents}
+          selectedMailboxKey={threads.mailboxKey}
+          mailboxes={mailboxes}
+          agentCount={agents.agents.length}
           unreadCount={threads.unreadCount}
           pendingCount={pendingCount}
           draftCount={threads.draftCount}
           agentUnreadCounts={threads.agentUnreadCounts}
           agentPendingCounts={threads.agentPendingCounts}
-          onSelectFolder={threads.selectFolder}
-          onSelectAgent={threads.selectAgent}
+          onSelectFolder={handleSelectFolder}
+          onSelectMailbox={handleSelectMailbox}
           onCompose={compose.openNew}
         />
 
@@ -430,7 +479,7 @@ export const Mailbox = () => {
             loading={threads.loading}
             error={threads.error}
             agentName={agentName}
-            onSelectFolder={threads.selectFolder}
+            onSelectFolder={handleSelectFolder}
             onSelectThread={handleSelectHomeThread}
             onCompose={compose.openNew}
           />
@@ -441,6 +490,8 @@ export const Mailbox = () => {
             notificationSound={notificationSound.enabled}
             onSelectNotificationSound={notificationSound.setEnabled}
             onPreviewNotificationSound={notificationSound.preview}
+            groupDefaultAgents={groupDefaultAgents.grouped}
+            onSelectGroupDefaultAgents={groupDefaultAgents.setGrouped}
           />
         ) : threads.folder === 'contacts' ? (
           <>
@@ -464,7 +515,7 @@ export const Mailbox = () => {
           <>
             <ThreadList
               folder={threads.folder}
-              agent={listedAgent}
+              mailbox={listedMailbox}
               threads={shownThreads}
               drafts={threads.drafts}
               agents={agents.agents}

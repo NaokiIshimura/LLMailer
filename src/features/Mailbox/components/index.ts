@@ -5,6 +5,7 @@ export { ContactView } from './ContactView';
 export { DirectoryPicker } from './DirectoryPicker';
 export { FileViewer } from './FileViewer';
 export { FolderSidebar } from './FolderSidebar';
+export { GroupDefaultAgentsToggle } from './GroupDefaultAgentsToggle';
 export { HomeView } from './HomeView';
 export { Icon, type IconName } from './Icon';
 export { GlobalLoader, Spinner } from './Loader';

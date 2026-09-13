@@ -1,6 +1,7 @@
 'use client';
 
 import type { ThemePreference } from '@/lib/theme';
+import { GroupDefaultAgentsToggle } from '../GroupDefaultAgentsToggle';
 import { NotificationSoundToggle } from '../NotificationSoundToggle';
 import { ThemeToggle } from '../ThemeToggle';
 import styles from './SettingsView.module.css';
@@ -11,6 +12,9 @@ interface SettingsViewProps {
   readonly notificationSound: boolean;
   readonly onSelectNotificationSound: (enabled: boolean) => void;
   readonly onPreviewNotificationSound: () => void;
+  /** デフォルトのエージェントのメールボックスを 1 つにまとめるか */
+  readonly groupDefaultAgents: boolean;
+  readonly onSelectGroupDefaultAgents: (grouped: boolean) => void;
 }
 
 /**
@@ -25,6 +29,8 @@ export const SettingsView = ({
   notificationSound,
   onSelectNotificationSound,
   onPreviewNotificationSound,
+  groupDefaultAgents,
+  onSelectGroupDefaultAgents,
 }: SettingsViewProps) => (
   <section className={styles.view}>
     <header className={styles.header}>
@@ -44,6 +50,23 @@ export const SettingsView = ({
           </p>
         </div>
         <ThemeToggle theme={theme} onSelect={onSelectTheme} />
+      </div>
+
+      <h2 className={`${styles.groupTitle} ${styles.nextGroupTitle}`}>
+        メールボックス
+      </h2>
+      <div className={styles.item}>
+        <div className={styles.itemText}>
+          <p className={styles.itemTitle}>デフォルトのエージェント</p>
+          <p className={styles.itemDescription}>
+            左の一覧の並べ方です。「まとめる」にすると、はじめから用意されているエージェントのメールボックスを「デフォルト」1
+            つにまとめます。
+          </p>
+        </div>
+        <GroupDefaultAgentsToggle
+          grouped={groupDefaultAgents}
+          onSelect={onSelectGroupDefaultAgents}
+        />
       </div>
 
       <h2 className={`${styles.groupTitle} ${styles.nextGroupTitle}`}>通知</h2>

@@ -24,8 +24,10 @@ const NO_AGENT_COUNTS: Readonly<Record<string, number>> = {};
 
 export interface UseThreadsResult {
   readonly folder: Folder;
-  /** 宛先で絞り込んでいるエージェント ID（絞り込んでいなければ null） */
-  readonly agentId: string | null;
+  /** 宛先ごとの一覧を出しているメールボックスの識別子（出していなければ null） */
+  readonly mailboxKey: string | null;
+  /** 宛先で絞り込んでいるエージェント ID（絞り込んでいなければ空） */
+  readonly agentIds: readonly string[];
   readonly query: string;
   readonly threads: readonly Thread[];
   readonly drafts: readonly Message[];
@@ -39,20 +41,24 @@ export interface UseThreadsResult {
   readonly loading: boolean;
   readonly error: string | null;
   readonly selectFolder: (folder: Folder) => void;
-  /** 宛先 1 件のメール一覧に切り替える */
-  readonly selectAgent: (agentId: string) => void;
+  /** 宛先ごとのメール一覧に切り替える（まとめたメールボックスでは宛先が複数） */
+  readonly selectMailbox: (
+    mailboxKey: string,
+    agentIds: readonly string[]
+  ) => void;
   readonly changeQuery: (query: string) => void;
   readonly reload: () => void;
 }
 
 const buildUrl = (
   folder: Folder,
-  agentId: string | null,
+  agentIds: readonly string[],
   query: string
 ): string => {
   const params = new URLSearchParams({ folder });
-  if (agentId) {
-    params.set('agentId', agentId);
+  // まとめたメールボックスは宛先が複数になるため、同じ名前で並べて渡す
+  for (const agentId of agentIds) {
+    params.append('agentId', agentId);
   }
   if (query) {
     params.set('q', query);
@@ -60,33 +66,44 @@ const buildUrl = (
   return `/api/threads?${params}`;
 };
 
+/** 宛先で絞り込んでいないときの指定。参照を変えないよう使い回す */
+const NO_AGENT_IDS: readonly string[] = [];
+
 /** フォルダ・宛先・検索条件に応じたスレッド一覧を取得する */
 export const useThreads = (): UseThreadsResult => {
   const [folder, setFolder] = useState<Folder>('home');
   /** 宛先ごとの一覧を出しているときだけ入る */
-  const [agentId, setAgentId] = useState<string | null>(null);
+  const [mailbox, setMailbox] = useState<{
+    readonly key: string;
+    readonly agentIds: readonly string[];
+  } | null>(null);
   const [query, setQuery] = useState('');
+  const agentIds = mailbox?.agentIds ?? NO_AGENT_IDS;
   const resource = useJsonResource<ThreadsResponse>(
-    buildUrl(folder, agentId, query)
+    buildUrl(folder, agentIds, query)
   );
 
   // フォルダごとに検索対象が変わるため、切り替え時は条件を持ち越さない
   const selectFolder = useCallback((next: Folder) => {
     setFolder(next);
-    setAgentId(null);
+    setMailbox(null);
     setQuery('');
   }, []);
 
   // 宛先ごとの一覧は、メールボックスをその宛先で絞り込んだもの
-  const selectAgent = useCallback((next: string) => {
-    setFolder('mailbox');
-    setAgentId(next);
-    setQuery('');
-  }, []);
+  const selectMailbox = useCallback(
+    (key: string, nextAgentIds: readonly string[]) => {
+      setFolder('mailbox');
+      setMailbox({ key, agentIds: nextAgentIds });
+      setQuery('');
+    },
+    []
+  );
 
   return {
     folder,
-    agentId,
+    mailboxKey: mailbox?.key ?? null,
+    agentIds,
     query,
     threads: resource.data?.threads ?? [],
     drafts: resource.data?.drafts ?? [],
@@ -100,7 +117,7 @@ export const useThreads = (): UseThreadsResult => {
     loading: resource.loading,
     error: resource.error,
     selectFolder,
-    selectAgent,
+    selectMailbox,
     changeQuery: setQuery,
     // 安定した参照をそのまま渡す（包み直すと参照が変わり、呼び出し側の effect が再実行される）
     reload: resource.reload,

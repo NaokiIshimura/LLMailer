@@ -18,7 +18,9 @@ export type IconName =
   | 'moon'
   | 'desktop'
   | 'bell'
-  | 'bellOff';
+  | 'bellOff'
+  | 'expand'
+  | 'collapse';
 
 /**
  * 24x24 のストロークアイコン。
@@ -130,6 +132,22 @@ const PATHS: Readonly<Record<IconName, ReactNode>> = {
       <path d="M5.3 5.3A6.7 6.7 0 0 0 6 8c0 7-3 9-3 9h4" />
       <path d="M13.73 21a2 2 0 0 1-3.46 0" />
       <path d="m2 2 20 20" />
+    </>
+  ),
+  expand: (
+    <>
+      <path d="M15 3h6v6" />
+      <path d="M9 21H3v-6" />
+      <path d="m21 3-7 7" />
+      <path d="m3 21 7-7" />
+    </>
+  ),
+  collapse: (
+    <>
+      <path d="M20 10h-6V4" />
+      <path d="M4 14h6v6" />
+      <path d="m14 10 7-7" />
+      <path d="m3 21 7-7" />
     </>
   ),
 };

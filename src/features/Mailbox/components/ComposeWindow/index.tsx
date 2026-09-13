@@ -1,7 +1,7 @@
 'use client';
 
 import { isFullAccessAgent, type Agent } from '@/types/mail';
-import type { ComposeDraft } from '../../hooks';
+import { useComposeSize, type ComposeDraft } from '../../hooks';
 import { Icon } from '../Icon';
 import { Spinner } from '../Loader';
 import styles from './ComposeWindow.module.css';
@@ -35,25 +35,61 @@ export const ComposeWindow = ({
   onSaveDraft,
   onClose,
 }: ComposeWindowProps) => {
+  const { size, maximized, resizing, toggleMaximized, startResize } =
+    useComposeSize();
+
   const canSend =
     draft.agentIds.length > 0 && draft.body.trim().length > 0 && !sending;
 
   return (
     <div
-      className={styles.window}
+      className={`${styles.window} ${maximized ? styles.maximized : ''} ${
+        resizing ? styles.resizing : ''
+      }`}
+      // 最大化中は CSS 側の大きさに任せる
+      style={maximized ? undefined : { width: size.width, height: size.height }}
       role="dialog"
       aria-label={draft.locked ? '返信' : '新規作成'}
     >
+      {/* ウィンドウは右下に固定されているため、広げるつまみは左上と上辺・左辺に置く */}
+      <div
+        className={`${styles.resizeHandle} ${styles.resizeLeft}`}
+        onPointerDown={startResize('x')}
+        aria-hidden="true"
+      />
+      <div
+        className={`${styles.resizeHandle} ${styles.resizeTop}`}
+        onPointerDown={startResize('y')}
+        aria-hidden="true"
+      />
+      <div
+        className={`${styles.resizeHandle} ${styles.resizeCorner}`}
+        onPointerDown={startResize('both')}
+        aria-hidden="true"
+      />
+
       <header className={styles.header}>
         <span>{draft.locked ? '返信' : '新規作成'}</span>
-        <button
-          type="button"
-          className={styles.closeButton}
-          onClick={onClose}
-          aria-label="閉じる"
-        >
-          <Icon name="close" size={18} />
-        </button>
+        <div className={styles.headerActions}>
+          <button
+            type="button"
+            className={styles.headerButton}
+            onClick={toggleMaximized}
+            aria-pressed={maximized}
+            aria-label={maximized ? '元の大きさに戻す' : '最大化'}
+            title={maximized ? '元の大きさに戻す' : '最大化'}
+          >
+            <Icon name={maximized ? 'collapse' : 'expand'} size={16} />
+          </button>
+          <button
+            type="button"
+            className={styles.headerButton}
+            onClick={onClose}
+            aria-label="閉じる"
+          >
+            <Icon name="close" size={18} />
+          </button>
+        </div>
       </header>
 
       {error && <p className={styles.error}>{error}</p>}

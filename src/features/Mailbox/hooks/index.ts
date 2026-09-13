@@ -6,6 +6,11 @@ export {
 export { useAgents, type UseAgentsResult } from './useAgents';
 export { useCompose, type ComposeDraft, type UseComposeResult } from './useCompose';
 export {
+  useComposeSize,
+  type ResizeAxis,
+  type UseComposeSizeResult,
+} from './useComposeSize';
+export {
   useDeleteMessage,
   type UseDeleteMessageResult,
 } from './useDeleteMessage';

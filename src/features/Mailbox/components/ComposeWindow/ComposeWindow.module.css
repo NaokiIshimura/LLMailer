@@ -4,8 +4,9 @@
   bottom: 24px;
   display: flex;
   flex-direction: column;
-  width: min(560px, calc(100vw - 48px));
-  max-height: min(640px, calc(100vh - 48px));
+  /* 幅と高さは useComposeSize が渡す。ここでは画面からはみ出さない上限だけを持つ */
+  max-width: calc(100vw - 48px);
+  max-height: calc(100vh - 48px);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
@@ -14,17 +15,84 @@
   z-index: 40;
 }
 
+/* 最大化中は左上のつまみではなく画面いっぱいに合わせる */
+.maximized {
+  width: calc(100vw - 48px);
+  height: calc(100vh - 48px);
+}
+
+/* ドラッグ中に本文や見出しが選択されてしまわないようにする */
+.resizing {
+  user-select: none;
+}
+
+.resizeHandle {
+  position: absolute;
+  z-index: 1;
+  /* スマートフォンでドラッグしたときに画面ごとスクロールさせない */
+  touch-action: none;
+}
+
+.resizeLeft {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 6px;
+  cursor: ew-resize;
+}
+
+.resizeTop {
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 6px;
+  cursor: ns-resize;
+}
+
+.resizeCorner {
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+}
+
+/* つまめる場所だと分かるよう、角に小さなかぎ印を出す */
+.resizeCorner::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 6px;
+  height: 6px;
+  border-top: 2px solid var(--color-text-muted);
+  border-left: 2px solid var(--color-text-muted);
+  border-radius: 2px 0 0 0;
+  opacity: 0.5;
+}
+
+.resizeCorner:hover::after {
+  opacity: 1;
+}
+
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px;
+  padding: 10px 14px 10px 22px;
   background: var(--color-surface-muted);
   border-bottom: 1px solid var(--color-border);
   font-weight: 700;
 }
 
-.closeButton {
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.headerButton {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -35,14 +103,17 @@
   color: var(--color-text-muted);
 }
 
-.closeButton:hover {
+.headerButton:hover {
   background: var(--color-border);
   color: var(--color-text);
 }
 
 .fields {
   display: flex;
+  flex: 1;
   flex-direction: column;
+  /* 本文をウィンドウの高さいっぱいまで伸ばすため、縮む下限を外す */
+  min-height: 0;
   overflow-y: auto;
 }
 
@@ -100,12 +171,14 @@
 }
 
 .bodyInput {
-  min-height: 180px;
+  flex: 1;
+  min-height: 120px;
   padding: 12px 14px;
   background: none;
   border: none;
   outline: none;
-  resize: vertical;
+  /* 高さはウィンドウの大きさに従うため、textarea 自体の伸縮は止める */
+  resize: none;
 }
 
 .footer {

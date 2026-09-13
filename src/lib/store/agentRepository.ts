@@ -9,7 +9,7 @@ import { legacyAddressToAgentId } from './legacy';
 import { readJsonFileIfExists, updateJsonFile } from './jsonFile';
 
 /**
- * 既定のエージェント。リポジトリに同梱し、読むだけで書き換えない。
+ * デフォルトのエージェント。リポジトリに同梱し、読むだけで書き換えない。
  * アプリの土台として常に居てほしいので、画面からは変更・削除させない。
  */
 const DEFAULT_FILE = 'agents/default.json';
@@ -17,12 +17,12 @@ const DEFAULT_FILE = 'agents/default.json';
 /** 画面から追加したエージェント。CRUD の対象で、git には含めない */
 const USER_FILE = 'agents/user.json';
 
-/** 既定と利用者ぶんが 1 つになっていた頃のファイル（読み込み時に引き継ぐ） */
+/** デフォルトと利用者ぶんが 1 つになっていた頃のファイル（読み込み時に引き継ぐ） */
 const LEGACY_FILE = 'agents.json';
 
 /**
  * 追加・変更・削除が行えなかった理由。
- * 'protected' は既定のエージェントを触ろうとした場合、
+ * 'protected' はデフォルトのエージェントを触ろうとした場合、
  * 'duplicateName' は同じ名前のエージェントが既に居る場合。
  */
 export type AgentMutationError = 'notFound' | 'protected' | 'duplicateName';
@@ -57,7 +57,7 @@ const readAgentFile = async (fileName: string): Promise<readonly Agent[]> =>
  * 利用者が追加したエージェントを読む。
  *
  * user.json がまだ無ければ、1 ファイルだった頃の data/agents.json から引き継ぐ。
- * 既定のぶんは default.json 側が持つので、ここでは常に取り除く。
+ * デフォルトのぶんは default.json 側が持つので、ここでは常に取り除く。
  * （引き継いだ内容は、次の追加・変更・削除で user.json として書き出される）
  */
 const readUserAgents = async (
@@ -75,8 +75,8 @@ const readUserAgents = async (
 /**
  * user.json を読み込み → 更新 → 書き込みする。
  *
- * 既定は別ファイルなので、ここで書き換えるのは利用者ぶんだけ。
- * 同名の判定などに要るため、既定の一覧も updater へ渡す。
+ * デフォルトは別ファイルなので、ここで書き換えるのは利用者ぶんだけ。
+ * 同名の判定などに要るため、デフォルトの一覧も updater へ渡す。
  */
 const updateUserAgents = async <R>(
   updater: (
@@ -107,7 +107,7 @@ const hasSameName = (
 ): boolean =>
   agents.some((agent) => agent.id !== exceptId && agent.name === name);
 
-/** 既定を先、利用者が追加したぶんを後に並べる */
+/** デフォルトを先、利用者が追加したぶんを後に並べる */
 export const listAgents = async (): Promise<readonly ListedAgent[]> => {
   const defaults = await readAgentFile(DEFAULT_FILE);
   const users = await readUserAgents(defaults);

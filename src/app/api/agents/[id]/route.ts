@@ -8,11 +8,11 @@ interface RouteContext {
   readonly params: Promise<{ readonly id: string }>;
 }
 
-/** 既定のエージェントは 403、名前の重複は 409、居ないものは 404 として返す */
+/** デフォルトのエージェントは 403、名前の重複は 409、居ないものは 404 として返す */
 const mutationErrorResponse = (error: AgentMutationError): NextResponse => {
   switch (error) {
     case 'protected':
-      return errorResponse('既定のエージェントは変更・削除できません。', 403);
+      return errorResponse('デフォルトのエージェントは変更・削除できません。', 403);
     case 'duplicateName':
       return errorResponse('同じ名前のエージェントが既にあります。', 409);
     case 'notFound':

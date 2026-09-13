@@ -69,7 +69,7 @@ export const ContactList = ({
               <span className={styles.name}>{agent.name}</span>
               <PermissionBadge agent={agent} />
               {agent.isDefault && (
-                <span className={styles.defaultTag}>既定</span>
+                <span className={styles.defaultTag}>デフォルト</span>
               )}
             </div>
             <div className={styles.model}>{agent.model}</div>

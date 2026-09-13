@@ -185,7 +185,7 @@ export const AgentEditor = ({
                   onChange({ timeoutSeconds: event.target.value })
                 }
               />
-              <span className={styles.unit}>秒（空欄なら既定の 10 分）</span>
+              <span className={styles.unit}>秒（空欄ならデフォルトの 10 分）</span>
             </span>
           </label>
 

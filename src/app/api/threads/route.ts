@@ -24,8 +24,9 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
   try {
     const folder = parseFolder(request.nextUrl.searchParams.get('folder'));
     const query = request.nextUrl.searchParams.get('q')?.trim() ?? '';
-    // 宛先（エージェント）1 件に絞ったメール一覧を出すための指定
-    const agentId = request.nextUrl.searchParams.get('agentId') ?? undefined;
+    // 宛先（エージェント）で絞ったメール一覧を出すための指定。
+    // まとめたメールボックスでは複数の宛先を受け取る
+    const agentIds = request.nextUrl.searchParams.getAll('agentId');
     // 前のプロセスが残した対応中は返信が届かないため、読み出す前に失敗へ倒す
     await failStalePendingMessages();
     const messages = await listMessages();
@@ -41,7 +42,7 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
           : buildThreads(messages, {
               folder,
               query,
-              agentId,
+              agentIds,
               archivedThreadIds,
             }),
       drafts: folder === 'drafts' ? buildDrafts(messages, query) : [],

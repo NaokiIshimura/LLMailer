@@ -86,21 +86,24 @@ export const ThreadView = ({
             {/*
               対応が済んだスレッドを片付ける（アーカイブフォルダでは戻す）。
               返信の隣に置くと取り違えて押されるため、件名の横まで離す。
+              対応中はまだ片付けられないため、そのあいだは出さない。
             */}
-            <button
-              type="button"
-              className={styles.archiveButton}
-              onClick={() => onArchive(!thread.archived)}
-              disabled={archiving}
-              aria-label={archiveLabel}
-              title={archiveLabel}
-            >
-              {archiving ? (
-                <Spinner />
-              ) : (
-                <Icon name={thread.archived ? 'inbox' : 'archive'} size={16} />
-              )}
-            </button>
+            {!thread.hasPending && (
+              <button
+                type="button"
+                className={styles.archiveButton}
+                onClick={() => onArchive(!thread.archived)}
+                disabled={archiving}
+                aria-label={archiveLabel}
+                title={archiveLabel}
+              >
+                {archiving ? (
+                  <Spinner />
+                ) : (
+                  <Icon name={thread.archived ? 'inbox' : 'archive'} size={16} />
+                )}
+              </button>
+            )}
           </div>
           <p className={styles.participants}>
             {thread.participants.map(agentName).join(', ')} ・{' '}

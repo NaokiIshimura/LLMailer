@@ -1,5 +1,6 @@
 'use client';
 
+import type { AgentMailbox } from '@/lib/agentMailbox';
 import { formatListDate } from '@/lib/format';
 import type { Agent, Folder, Message, Thread } from '@/types/mail';
 import { Icon } from '../Icon';
@@ -9,8 +10,8 @@ import styles from './ThreadList.module.css';
 
 interface ThreadListProps {
   readonly folder: Folder;
-  /** 宛先で絞り込んでいるエージェント（絞り込んでいなければ null） */
-  readonly agent: Agent | null;
+  /** 宛先で絞り込んでいるメールボックス（絞り込んでいなければ null） */
+  readonly mailbox: AgentMailbox | null;
   readonly threads: readonly Thread[];
   readonly drafts: readonly Message[];
   readonly agents: readonly Agent[];
@@ -34,7 +35,7 @@ interface ThreadListProps {
 /** スレッド一覧（下書きフォルダでは下書き一覧、宛先を選んでいればその宛先のメール一覧） */
 export const ThreadList = ({
   folder,
-  agent,
+  mailbox,
   threads,
   drafts,
   agents,
@@ -57,18 +58,25 @@ export const ThreadList = ({
   return (
     <section className={styles.list}>
       {/* 宛先で絞り込んでいるときは、どの宛先の一覧かを見出しに出す */}
-      {agent && (
+      {mailbox && (
         <div className={styles.agentHeader}>
           <div className={styles.agentHeading}>
-            <span className={styles.agentName}>{agent.name}</span>
-            <PermissionBadge agent={agent} />
+            <span className={styles.agentName}>{mailbox.name}</span>
+            {/* まとめたメールボックスは宛先ごとに権限が違うため、バッジは出さない */}
+            {mailbox.agent && <PermissionBadge agent={mailbox.agent} />}
           </div>
           {/* 宛先は見出しに出ているので、ボタンは短い文言にして名前の表示幅を残す */}
           <button
             type="button"
             className={styles.composeButton}
-            onClick={() => onCompose([agent.id])}
-            title={`${agent.name}にメールを書く`}
+            onClick={() =>
+              onCompose(mailbox.agent ? [mailbox.agent.id] : undefined)
+            }
+            title={
+              mailbox.agent
+                ? `${mailbox.agent.name}にメールを書く`
+                : 'メールを書く'
+            }
           >
             <Icon name="mail" size={14} />
             新規作成
@@ -102,8 +110,9 @@ export const ThreadList = ({
 
         {!loading && !error && folder !== 'drafts' && threads.length === 0 && (
           <p className={styles.empty}>
-            {agent
-              ? `${agent.name}とのやり取りはありません`
+            {/* まとめたメールボックスは相手が 1 人ではないので、名前を出さない */}
+            {mailbox?.agent
+              ? `${mailbox.agent.name}とのやり取りはありません`
               : 'メッセージはありません'}
           </p>
         )}
@@ -189,28 +198,34 @@ export const ThreadList = ({
                   </div>
                   <div className={styles.snippet}>{thread.snippet}</div>
                 </button>
-                <button
-                  type="button"
-                  className={`${styles.rowAction} ${styles.archiveAction}`}
-                  onClick={() => onArchiveThread(thread)}
-                  disabled={archiving}
-                  aria-label={
-                    thread.archived
-                      ? 'このスレッドをメールボックスへ戻す'
-                      : 'このスレッドをアーカイブする'
-                  }
-                  title={
-                    thread.archived
-                      ? 'このスレッドをメールボックスへ戻す'
-                      : 'このスレッドをアーカイブする'
-                  }
-                >
-                  {archiving ? (
-                    <Spinner />
-                  ) : (
-                    <Icon name={thread.archived ? 'inbox' : 'archive'} size={15} />
-                  )}
-                </button>
+                {/* 対応中はまだ片付けられないため、アーカイブの操作を出さない */}
+                {!thread.hasPending && (
+                  <button
+                    type="button"
+                    className={`${styles.rowAction} ${styles.archiveAction}`}
+                    onClick={() => onArchiveThread(thread)}
+                    disabled={archiving}
+                    aria-label={
+                      thread.archived
+                        ? 'このスレッドをメールボックスへ戻す'
+                        : 'このスレッドをアーカイブする'
+                    }
+                    title={
+                      thread.archived
+                        ? 'このスレッドをメールボックスへ戻す'
+                        : 'このスレッドをアーカイブする'
+                    }
+                  >
+                    {archiving ? (
+                      <Spinner />
+                    ) : (
+                      <Icon
+                        name={thread.archived ? 'inbox' : 'archive'}
+                        size={15}
+                      />
+                    )}
+                  </button>
+                )}
               </div>
             ))}
       </div>

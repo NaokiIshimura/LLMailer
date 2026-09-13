@@ -129,13 +129,16 @@ const matchesQuery = (query: string, messages: readonly Message[]): boolean => {
 const byLastMessageAtDesc = (a: Thread, b: Thread): number =>
   b.lastMessageAt.localeCompare(a.lastMessageAt);
 
-/** 指定した宛先とのやり取りを含むスレッドか */
-const matchesAgent = (
-  agentId: string | undefined,
+/** 指定した宛先のいずれかとのやり取りを含むスレッドか */
+const matchesAgents = (
+  agentIds: readonly string[] | undefined,
   messages: readonly Message[]
 ): boolean =>
-  !agentId ||
-  messages.some((message) => message.agentIds.includes(agentId));
+  !agentIds ||
+  agentIds.length === 0 ||
+  messages.some((message) =>
+    message.agentIds.some((id) => agentIds.includes(id))
+  );
 
 /** フォルダ・宛先・検索条件でスレッド一覧を導出する */
 export const buildThreads = (
@@ -143,15 +146,18 @@ export const buildThreads = (
   options: {
     readonly folder: Folder;
     readonly query?: string;
-    /** 指定するとその宛先とのやり取りだけに絞る */
-    readonly agentId?: string;
+    /**
+     * 指定するとその宛先とのやり取りだけに絞る。
+     * 複数渡すと、いずれかを含むスレッドをまとめて出す。
+     */
+    readonly agentIds?: readonly string[];
     /** アーカイブ済みのスレッド ID（アーカイブフォルダではここに載るものだけを出す） */
     readonly archivedThreadIds?: ReadonlySet<string>;
   } = {
     folder: 'mailbox',
   }
 ): readonly Thread[] => {
-  const { folder, query = '', agentId, archivedThreadIds } = options;
+  const { folder, query = '', agentIds, archivedThreadIds } = options;
   const threads: Thread[] = [];
 
   if (!showsThreads(folder)) {
@@ -164,7 +170,10 @@ export const buildThreads = (
     if (archived !== (folder === 'archive')) {
       continue;
     }
-    if (!matchesQuery(query, threadMessages) || !matchesAgent(agentId, threadMessages)) {
+    if (
+      !matchesQuery(query, threadMessages) ||
+      !matchesAgents(agentIds, threadMessages)
+    ) {
       continue;
     }
     threads.push(buildThread(threadId, threadMessages, archived));

@@ -43,7 +43,5 @@ next-env.d.ts
 # LLMailer
 /data/messages.json
 /data/agents/user.json
-# 既定と利用者ぶんが 1 つだった頃のファイル（user.json へ引き継いだあとは削除してよい）
-/data/agents.json
 .env.local
 .claude/

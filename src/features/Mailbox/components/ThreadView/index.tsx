@@ -1,8 +1,8 @@
 'use client';
 
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import type { Message, Thread } from '@/types/mail';
-import { useMarkReadOnInteraction } from '../../hooks';
+import { useExitTransition, useMarkReadOnInteraction } from '../../hooks';
 import { Icon } from '../Icon';
 import { Spinner } from '../Loader';
 import { MessageItem } from '../MessageItem';
@@ -56,6 +56,15 @@ export const ThreadView = ({
     newReplyCount > 0,
     onMarkRead
   );
+
+  // 知らせは既読にした時点で消えるので、消えるアニメーションのあいだだけ残す
+  const newReplyExit = useExitTransition(newReplyCount > 0);
+
+  // 消えていく途中で 0 件に変わってしまわないよう、届いた件数はそのまま出し続ける
+  const [shownNewReplyCount, setShownNewReplyCount] = useState(newReplyCount);
+  if (newReplyCount > 0 && newReplyCount !== shownNewReplyCount) {
+    setShownNewReplyCount(newReplyCount);
+  }
 
   // 再取得中でも、すでに開いているスレッドがあれば内容を出し続ける
   if (loading && !thread) {
@@ -134,11 +143,16 @@ export const ThreadView = ({
         席を外していても、戻ってきたときに未読が残っている。
         戻ってきて本文を触れば消えるが、押せば済むようにボタンも残しておく。
       */}
-      {newReplyCount > 0 && (
-        <div className={styles.newReplyBar}>
+      {newReplyExit.visible && (
+        <div
+          className={`${styles.newReplyBar} ${
+            newReplyExit.exiting ? styles.newReplyBarExiting : ''
+          }`}
+          onAnimationEnd={newReplyExit.handleAnimationEnd}
+        >
           <span className={styles.newReplyText}>
             <Icon name="mail" size={14} />
-            新しい返信が {newReplyCount} 件届きました
+            新しい返信が {shownNewReplyCount} 件届きました
           </span>
           <button
             type="button"

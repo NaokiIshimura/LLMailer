@@ -23,10 +23,20 @@
   box-shadow: var(--shadow);
   font-size: 13px;
   z-index: 50;
+  /* 配信が始まったことが唐突に見えないよう、浮かび上がらせる */
+  animation: popIn var(--duration-base) var(--easing-decelerate);
 }
 
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* 知らせは少し下から浮かび上がらせる */
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
   }
 }

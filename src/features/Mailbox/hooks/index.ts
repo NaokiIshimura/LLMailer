@@ -26,6 +26,10 @@ export {
   useDirectoryBrowser,
   type UseDirectoryBrowserResult,
 } from './useDirectoryBrowser';
+export {
+  useExitTransition,
+  type UseExitTransitionResult,
+} from './useExitTransition';
 export { useFileViewer, type UseFileViewerResult } from './useFileViewer';
 export {
   useGroupDefaultAgents,

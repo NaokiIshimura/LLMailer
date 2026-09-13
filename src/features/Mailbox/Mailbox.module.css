@@ -41,6 +41,23 @@
   display: grid;
   grid-template-columns: 220px minmax(260px, 340px) 1fr;
   min-height: 0;
+  /* 出てくる途中のペインが下へはみ出しても、ページにスクロールバーを出さない */
+  overflow: hidden;
+}
+
+/*
+ * 見ている場所を移ったときに、中身が突然差し替わらないようにする。
+ * 左のサイドバーは移っても残るため、2 列目から先だけを対象にする。
+ */
+@keyframes paneIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.panes > *:not(:first-child) {
+  animation: paneIn var(--duration-base) var(--easing-decelerate);
 }
 
 .notice {

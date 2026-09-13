@@ -7,6 +7,8 @@
   padding: 24px;
   background: var(--color-overlay);
   z-index: 50;
+  /* 背面が暗くなる過程を見せる */
+  animation: fadeIn var(--duration-base) var(--easing-standard);
 }
 
 .window {
@@ -19,6 +21,8 @@
   border-radius: var(--radius);
   box-shadow: var(--shadow-window);
   overflow: hidden;
+  /* 暗転より長めに取り、浮かび上がるように出す */
+  animation: popIn var(--duration-slow) var(--easing-decelerate);
 }
 
 .header {
@@ -145,4 +149,19 @@
   background: var(--color-danger-weak);
   color: var(--color-danger);
   font-size: 13px;
+}
+
+/* 暗転は不透明度だけで出す */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ウィンドウは少し下から浮かび上がらせる */
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
 }

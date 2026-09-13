@@ -32,7 +32,7 @@ npm install
 npm run dev
 ```
 
-`http://localhost:3000` を開く。
+`http://localhost:25110` を開く。
 
 ## 使い方
 

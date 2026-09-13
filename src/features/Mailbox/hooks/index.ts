@@ -10,6 +10,10 @@ export {
 } from './useArchiveThread';
 export { useCompose, type ComposeDraft, type UseComposeResult } from './useCompose';
 export {
+  useComposeKeyboard,
+  type UseComposeKeyboardResult,
+} from './useComposeKeyboard';
+export {
   useComposeSize,
   type ResizeAxis,
   type UseComposeSizeResult,

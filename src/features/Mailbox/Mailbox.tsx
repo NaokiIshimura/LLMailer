@@ -571,11 +571,13 @@ export const Mailbox = () => {
             <ThreadView
               thread={shownThread}
               exchanges={shownExchanges}
+              newReplyCount={detail.newReplyCount}
               loading={detail.loading}
               // 保存前のスレッドを取得しに行くと 404 になるため、表示できているうちは伏せる
               error={shownMessages.length > 0 ? null : detail.error}
               agentName={agentName}
               onReply={handleReply}
+              onMarkRead={detail.markRead}
               onRetry={handleRetry}
               onCancelFailure={handleCancelFailure}
               dismissing={failureDeleter.deleting}

@@ -7,7 +7,11 @@ import {
   type Agent,
   type ListedTemplate,
 } from '@/types/mail';
-import { useComposeSize, type ComposeDraft } from '../../hooks';
+import {
+  useComposeKeyboard,
+  useComposeSize,
+  type ComposeDraft,
+} from '../../hooks';
 import { Icon } from '../Icon';
 import { Spinner } from '../Loader';
 import { TemplatePicker } from '../TemplatePicker';
@@ -49,6 +53,13 @@ export const ComposeWindow = ({
     useComposeSize();
   const bodyRef = useRef<HTMLTextAreaElement>(null);
 
+  const canSend =
+    draft.agentIds.length > 0 && draft.body.trim().length > 0 && !sending;
+  const { sendButtonRef, sendShortcut, handleBodyKeyDown } = useComposeKeyboard(
+    onSend,
+    canSend
+  );
+
   /** テンプレートは本文のカーソル位置へ差し込む（選択範囲があれば置き換える） */
   const handleSelectTemplate = (template: ListedTemplate): void => {
     const textarea = bodyRef.current;
@@ -73,9 +84,6 @@ export const ComposeWindow = ({
       current.setSelectionRange(caret, caret);
     });
   };
-
-  const canSend =
-    draft.agentIds.length > 0 && draft.body.trim().length > 0 && !sending;
 
   return (
     <div
@@ -192,6 +200,7 @@ export const ComposeWindow = ({
           value={draft.body}
           placeholder="エージェントへの指示を書いてください"
           onChange={(event) => onChange({ body: event.target.value })}
+          onKeyDown={handleBodyKeyDown}
         />
 
         <div className={styles.templateRow}>
@@ -204,10 +213,12 @@ export const ComposeWindow = ({
 
       <footer className={styles.footer}>
         <button
+          ref={sendButtonRef}
           type="button"
           className={styles.sendButton}
           onClick={onSend}
           disabled={!canSend}
+          title={`${sendShortcut} でも送信できます`}
         >
           {sending ? <Spinner /> : '送信'}
         </button>
@@ -221,7 +232,8 @@ export const ComposeWindow = ({
         </button>
         <span className={styles.hint}>
           複数宛先で返信を比較できます。
-          <Icon name="warning" size={12} /> の宛先はファイルを変更します
+          <Icon name="warning" size={12} /> の宛先はファイルを変更します。
+          {sendShortcut} で送信できます
         </span>
       </footer>
     </div>

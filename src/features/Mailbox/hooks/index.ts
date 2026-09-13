@@ -4,6 +4,10 @@ export {
   type UseAgentEditorResult,
 } from './useAgentEditor';
 export { useAgents, type UseAgentsResult } from './useAgents';
+export {
+  useArchiveThread,
+  type UseArchiveThreadResult,
+} from './useArchiveThread';
 export { useCompose, type ComposeDraft, type UseComposeResult } from './useCompose';
 export {
   useComposeSize,

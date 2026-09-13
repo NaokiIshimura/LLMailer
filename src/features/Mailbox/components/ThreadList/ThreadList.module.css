@@ -76,55 +76,105 @@
   text-align: left;
 }
 
-.item:hover {
-  background: var(--color-surface-muted);
-}
-
-/* 下書きは「開く」と「削除」を横に並べ、区切り線は行側で引く */
-.draftRow {
+/*
+ * 行の入れ物。
+ *
+ * 背景は行側で持つ。操作ボタンが重なる部分を同じ色で塗りつぶし、
+ * 下にある日時が透けないようにするため。
+ */
+.row {
+  position: relative;
   display: flex;
   align-items: center;
+  background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
 }
 
-.draftRow .item {
+.row:hover {
+  background: var(--color-surface-muted);
+}
+
+.row .item {
   flex: 1;
-  /* 件名・本文がはみ出しても削除ボタンを押し出さない */
+  /* 件名・本文がはみ出しても操作ボタンを押し出さない */
   min-width: 0;
   border-bottom: none;
 }
 
-.deleteButton {
+/*
+ * 行の操作（アーカイブ・下書きの削除）。
+ *
+ * 横に並べると件名・本文の幅をいつも削ってしまうため、行の右端中央に重ねて置き、
+ * その行を指しているあいだだけ出す。
+ */
+.rowAction {
+  position: absolute;
+  top: 50%;
+  right: 8px;
   display: inline-flex;
-  flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  margin-right: 8px;
-  background: none;
+  width: 28px;
+  height: 28px;
+  /* 下にある件名・本文が透けないよう、行と同じ色で塗る */
+  background: inherit;
   border: none;
   border-radius: var(--radius);
   color: var(--color-text-muted);
+  transform: translateY(-50%);
+  opacity: 0;
 }
 
-.deleteButton:hover:not(:disabled) {
+/* マウスで指している行と、キーボードで辿り着いたボタンだけ出す */
+.row:hover .rowAction,
+.rowAction:focus-visible {
+  opacity: 1;
+}
+
+/* 出ているあいだだけ、押せないことが分かるように薄くする */
+.row:hover .rowAction:disabled,
+.rowAction:disabled:focus-visible {
+  opacity: 0.5;
+}
+
+/* ホバーできない環境では出しっぱなしにできないので、従来どおり横に並べる */
+@media (hover: none) {
+  .rowAction {
+    position: static;
+    margin-right: 8px;
+    flex-shrink: 0;
+    transform: none;
+    opacity: 1;
+  }
+
+  .rowAction:disabled {
+    opacity: 0.5;
+  }
+}
+
+.deleteAction:hover:not(:disabled) {
   background: var(--color-danger-weak);
   color: var(--color-danger);
 }
 
-.deleteButton:disabled {
-  opacity: 0.5;
+.archiveAction:hover:not(:disabled) {
+  background: var(--color-accent-weak);
+  color: var(--color-accent);
 }
 
-.selected {
+/* ホバーの色より選択中であることを優先する（.row と同じ強さにして後勝ちさせる） */
+.row.selected {
   background: var(--color-accent-weak);
 }
 
 /* 対応中のスレッドは、左端の帯で一覧の中から見つけられるようにする */
 .pending {
-  padding-left: 11px;
   border-left: 3px solid var(--color-accent);
+}
+
+/* 帯のぶんだけ本文側の余白を詰め、行の幅をほかと揃える */
+.pending .item {
+  padding-left: 11px;
 }
 
 .topRow {

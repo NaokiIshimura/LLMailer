@@ -25,6 +25,10 @@ interface ThreadListProps {
   readonly onDeleteDraft: (draft: Message) => void;
   /** 下書きの削除リクエスト中か */
   readonly deletingDraft: boolean;
+  /** 対応が済んだスレッドを片付ける（アーカイブ済みなら解除する） */
+  readonly onArchiveThread: (thread: Thread) => void;
+  /** アーカイブの切り替えリクエスト中か */
+  readonly archiving: boolean;
 }
 
 /** スレッド一覧（下書きフォルダでは下書き一覧、宛先を選んでいればその宛先のメール一覧） */
@@ -44,6 +48,8 @@ export const ThreadList = ({
   onSelectDraft,
   onDeleteDraft,
   deletingDraft,
+  onArchiveThread,
+  archiving,
 }: ThreadListProps) => {
   const nameOf = (agentId: string): string =>
     agents.find((item) => item.id === agentId)?.name ?? '不明なエージェント';
@@ -105,7 +111,7 @@ export const ThreadList = ({
         {folder === 'drafts'
           ? drafts.map((draft) => (
               // 下書きを開くボタンの中に削除ボタンは置けないため、横に並べる
-              <div key={draft.id} className={styles.draftRow}>
+              <div key={draft.id} className={styles.row}>
                 <button
                   type="button"
                   className={styles.item}
@@ -126,7 +132,7 @@ export const ThreadList = ({
                 </button>
                 <button
                   type="button"
-                  className={styles.deleteButton}
+                  className={`${styles.rowAction} ${styles.deleteAction}`}
                   onClick={() => onDeleteDraft(draft)}
                   disabled={deletingDraft}
                   aria-label="この下書きを削除"
@@ -137,45 +143,75 @@ export const ThreadList = ({
               </div>
             ))
           : threads.map((thread) => (
-              <button
+              // スレッドを開くボタンの中にアーカイブボタンは置けないため、横に並べる
+              <div
                 key={thread.id}
-                type="button"
-                className={`${styles.item} ${
+                className={`${styles.row} ${
                   thread.id === selectedThreadId ? styles.selected : ''
                 } ${thread.hasPending ? styles.pending : ''}`}
-                onClick={() => onSelectThread(thread.id)}
               >
-                <div className={styles.topRow}>
-                  <span className={styles.participants}>
-                    {thread.participants.map(nameOf).join(', ')}
-                  </span>
-                  <span className={styles.date}>
-                    {formatListDate(thread.lastMessageAt)}
-                  </span>
-                </div>
-                <div
-                  className={`${styles.subject} ${
-                    thread.unreadCount > 0 ? styles.unread : ''
-                  }`}
+                <button
+                  type="button"
+                  className={styles.item}
+                  onClick={() => onSelectThread(thread.id)}
                 >
-                  {thread.unreadCount > 0 && (
-                    <span className={styles.dot} aria-label="未読" />
-                  )}
-                  <span className={styles.subjectText}>{thread.subject}</span>
-                  {thread.hasPending && (
-                    <span className={`${styles.tag} ${styles.pendingTag}`}>
-                      <span className={styles.pendingPulse} aria-hidden="true" />
-                      対応中
+                  <div className={styles.topRow}>
+                    <span className={styles.participants}>
+                      {thread.participants.map(nameOf).join(', ')}
                     </span>
-                  )}
-                  {thread.hasFailure && (
-                    <span className={`${styles.tag} ${styles.failureTag}`}>
-                      失敗
+                    <span className={styles.date}>
+                      {formatListDate(thread.lastMessageAt)}
                     </span>
+                  </div>
+                  <div
+                    className={`${styles.subject} ${
+                      thread.unreadCount > 0 ? styles.unread : ''
+                    }`}
+                  >
+                    {thread.unreadCount > 0 && (
+                      <span className={styles.dot} aria-label="未読" />
+                    )}
+                    <span className={styles.subjectText}>{thread.subject}</span>
+                    {thread.hasPending && (
+                      <span className={`${styles.tag} ${styles.pendingTag}`}>
+                        <span
+                          className={styles.pendingPulse}
+                          aria-hidden="true"
+                        />
+                        対応中
+                      </span>
+                    )}
+                    {thread.hasFailure && (
+                      <span className={`${styles.tag} ${styles.failureTag}`}>
+                        失敗
+                      </span>
+                    )}
+                  </div>
+                  <div className={styles.snippet}>{thread.snippet}</div>
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.rowAction} ${styles.archiveAction}`}
+                  onClick={() => onArchiveThread(thread)}
+                  disabled={archiving}
+                  aria-label={
+                    thread.archived
+                      ? 'このスレッドをメールボックスへ戻す'
+                      : 'このスレッドをアーカイブする'
+                  }
+                  title={
+                    thread.archived
+                      ? 'このスレッドをメールボックスへ戻す'
+                      : 'このスレッドをアーカイブする'
+                  }
+                >
+                  {archiving ? (
+                    <Spinner />
+                  ) : (
+                    <Icon name={thread.archived ? 'inbox' : 'archive'} size={15} />
                   )}
-                </div>
-                <div className={styles.snippet}>{thread.snippet}</div>
-              </button>
+                </button>
+              </div>
             ))}
       </div>
     </section>

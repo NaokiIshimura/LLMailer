@@ -4,9 +4,11 @@ import {
   failStalePendingMessages,
   listMessages,
 } from '@/lib/store/messageRepository';
+import { listArchivedAt } from '@/lib/store/threadStateRepository';
 import {
   buildDrafts,
   buildThreads,
+  collectArchivedThreadIds,
   countPending,
   countReceived,
   countUnread,
@@ -26,15 +28,24 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
     // 前のプロセスが残した対応中は返信が届かないため、読み出す前に失敗へ倒す
     await failStalePendingMessages();
     const messages = await listMessages();
+    const archivedThreadIds = collectArchivedThreadIds(
+      messages,
+      await listArchivedAt()
+    );
 
     return NextResponse.json({
       threads:
         folder === 'drafts'
           ? []
-          : buildThreads(messages, { folder, query, agentId }),
+          : buildThreads(messages, {
+              folder,
+              query,
+              agentId,
+              archivedThreadIds,
+            }),
       drafts: folder === 'drafts' ? buildDrafts(messages, query) : [],
-      unreadCount: countUnread(messages),
-      agentUnreadCounts: countUnreadByAgent(messages),
+      unreadCount: countUnread(messages, archivedThreadIds),
+      agentUnreadCounts: countUnreadByAgent(messages, archivedThreadIds),
       pendingCount: countPending(messages),
       // 返信が届いたかを画面側で見分けるための件数（絞り込みに左右されないよう全体で数える）
       receivedCount: countReceived(messages),

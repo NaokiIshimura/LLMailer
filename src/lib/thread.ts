@@ -47,7 +47,8 @@ export const groupByThread = (
 
 export const buildThread = (
   threadId: string,
-  messages: readonly Message[]
+  messages: readonly Message[],
+  archived = false
 ): Thread => {
   const latest = messages[messages.length - 1];
   return {
@@ -60,17 +61,46 @@ export const buildThread = (
     snippet: toSnippet(latest?.body ?? ''),
     hasPending: messages.some((message) => message.status === 'pending'),
     hasFailure: messages.some((message) => message.status === 'failed'),
+    archived,
   };
+};
+
+/**
+ * いまアーカイブされているスレッドの ID。
+ *
+ * アーカイブより後のメッセージがあるスレッドは、やり取りが再開したものとして含めない。
+ * 送信・受信のどちらでも同じに扱うので、
+ * 片付けたあとに返信が届いた場合も、こちらから返信した場合もメールボックスへ戻る。
+ */
+export const collectArchivedThreadIds = (
+  messages: readonly Message[],
+  archivedAt: ReadonlyMap<string, string>
+): ReadonlySet<string> => {
+  const threadIds = new Set<string>();
+  if (archivedAt.size === 0) {
+    return threadIds;
+  }
+
+  for (const [threadId, threadMessages] of groupByThread(messages)) {
+    const at = archivedAt.get(threadId);
+    if (at && threadMessages.every((message) => message.createdAt <= at)) {
+      threadIds.add(threadId);
+    }
+  }
+  return threadIds;
 };
 
 /** スレッド一覧を出すフォルダか */
 const showsThreads = (folder: Folder): boolean => {
   switch (folder) {
     case 'home':
-      // ホームは最近のやり取りを見せるので、全スレッドを対象にする
+      // ホームは最近のやり取りを見せるので、アーカイブ以外のスレッドを対象にする
       return true;
     case 'mailbox':
       // 送受信を区別せず、下書き以外のやり取りをまとめて見せる
+      return true;
+    case 'archive':
+      // 対応が済んだものとして片付けたスレッドだけを見せる
       return true;
     case 'drafts':
       // 下書きはスレッドではなくメッセージ単位で並べる
@@ -115,11 +145,13 @@ export const buildThreads = (
     readonly query?: string;
     /** 指定するとその宛先とのやり取りだけに絞る */
     readonly agentId?: string;
+    /** アーカイブ済みのスレッド ID（アーカイブフォルダではここに載るものだけを出す） */
+    readonly archivedThreadIds?: ReadonlySet<string>;
   } = {
     folder: 'mailbox',
   }
 ): readonly Thread[] => {
-  const { folder, query = '', agentId } = options;
+  const { folder, query = '', agentId, archivedThreadIds } = options;
   const threads: Thread[] = [];
 
   if (!showsThreads(folder)) {
@@ -127,10 +159,15 @@ export const buildThreads = (
   }
 
   for (const [threadId, threadMessages] of groupByThread(messages)) {
+    const archived = archivedThreadIds?.has(threadId) ?? false;
+    // アーカイブは片付けたものだけ、それ以外のフォルダは片付けていないものだけを出す
+    if (archived !== (folder === 'archive')) {
+      continue;
+    }
     if (!matchesQuery(query, threadMessages) || !matchesAgent(agentId, threadMessages)) {
       continue;
     }
-    threads.push(buildThread(threadId, threadMessages));
+    threads.push(buildThread(threadId, threadMessages, archived));
   }
 
   return threads.sort(byLastMessageAtDesc);
@@ -146,18 +183,35 @@ export const buildDrafts = (
     .filter((message) => matchesQuery(query, [message]))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
+/**
+ * 未読として数えるメッセージか。
+ *
+ * アーカイブ済みスレッドのぶんは数えない。
+ * 片付けたスレッドの未読がバッジに残り続けると、片付けた意味がなくなるため。
+ */
+const isUnreadReply = (
+  message: Message,
+  archivedThreadIds?: ReadonlySet<string>
+): boolean =>
+  message.status === 'received' &&
+  !message.read &&
+  !archivedThreadIds?.has(message.threadId);
+
 /** メールボックスの未読件数 */
-export const countUnread = (messages: readonly Message[]): number =>
-  messages.filter((message) => message.status === 'received' && !message.read)
-    .length;
+export const countUnread = (
+  messages: readonly Message[],
+  archivedThreadIds?: ReadonlySet<string>
+): number =>
+  messages.filter((message) => isUnreadReply(message, archivedThreadIds)).length;
 
 /** 宛先ごとの未読件数（サイドバーの宛先一覧に出す） */
 export const countUnreadByAgent = (
-  messages: readonly Message[]
+  messages: readonly Message[],
+  archivedThreadIds?: ReadonlySet<string>
 ): Readonly<Record<string, number>> => {
   const counts: Record<string, number> = {};
   for (const message of messages) {
-    if (message.status !== 'received' || message.read) {
+    if (!isUnreadReply(message, archivedThreadIds)) {
       continue;
     }
     for (const agentId of message.agentIds) {

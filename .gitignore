@@ -42,6 +42,7 @@ next-env.d.ts
 
 # LLMailer
 /data/messages.json
+/data/threadStates.json
 /data/agents/user.json
 .env.local
 .claude/

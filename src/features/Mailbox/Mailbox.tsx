@@ -28,6 +28,7 @@ import {
 import {
   useAgentEditor,
   useAgents,
+  useArchiveThread,
   useCompose,
   useDeleteMessage,
   useFileViewer,
@@ -64,6 +65,8 @@ export const Mailbox = () => {
   /** 失敗した返信を消すためのもの（再送後の片付けと、再送しない取り消しで使う） */
   const failureDeleter = useDeleteMessage();
   const draftDeleter = useDeleteMessage();
+  /** 対応が済んだスレッドの片付け（アーカイブと、その解除） */
+  const archiver = useArchiveThread();
   const compose = useCompose(threads.reload);
   const agentEditor = useAgentEditor(agents.reload);
   const theme = useTheme();
@@ -158,6 +161,8 @@ export const Mailbox = () => {
           hasFailure: shownMessages.some(
             (message) => message.status === 'failed'
           ),
+          // 送ったばかりなので片付いていない（アーカイブ済みでも送信でメールボックスへ戻る）
+          archived: false,
         }
       : null);
 
@@ -274,6 +279,25 @@ export const Mailbox = () => {
     [detail, dismissFailure, threads]
   );
 
+  /**
+   * 対応が済んだスレッドを片付ける（アーカイブフォルダでは受信箱へ戻す）。
+   *
+   * 片付けると今見ているフォルダの一覧から消えるため、開いていたら閉じる。
+   */
+  const handleArchive = useCallback(
+    async (threadId: string, archived: boolean) => {
+      if (!(await archiver.setArchived(threadId, archived))) {
+        return;
+      }
+
+      if (selectedThreadId === threadId) {
+        setSelectedThreadId(null);
+      }
+      threads.reload();
+    },
+    [archiver, selectedThreadId, threads]
+  );
+
   /** スレッドの最後のエージェント発言に返信する */
   const handleReply = useCallback(() => {
     // エージェントの発言が無ければ、自分の送信（＝同じ宛先）に対する追記として返信する
@@ -375,6 +399,7 @@ export const Mailbox = () => {
       {draftDeleter.error && (
         <p className={styles.notice}>{draftDeleter.error}</p>
       )}
+      {archiver.error && <p className={styles.notice}>{archiver.error}</p>}
       {/* 編集フォームを開いていないときの失敗（削除など）はヘッダー下に出す */}
       {agentEditor.error && !agentEditor.form && (
         <p className={styles.notice}>{agentEditor.error}</p>
@@ -453,6 +478,10 @@ export const Mailbox = () => {
                 void handleDeleteDraft(draftMessage)
               }
               deletingDraft={draftDeleter.deleting}
+              onArchiveThread={(thread) =>
+                void handleArchive(thread.id, !thread.archived)
+              }
+              archiving={archiver.archiving}
             />
 
             <ThreadView
@@ -466,6 +495,12 @@ export const Mailbox = () => {
               onRetry={handleRetry}
               onCancelFailure={handleCancelFailure}
               dismissing={failureDeleter.deleting}
+              onArchive={(archived) => {
+                if (shownThread) {
+                  void handleArchive(shownThread.id, archived);
+                }
+              }}
+              archiving={archiver.archiving}
               onOpenFile={fileViewer.open}
             />
           </>

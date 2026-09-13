@@ -140,3 +140,39 @@
 .body img {
   max-width: 100%;
 }
+
+/* 本文に書かれたファイルパス（クリックでビューアを開く） */
+.fileLink {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 0 4px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  color: var(--color-accent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.fileLink:hover {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+/* アイコンだけはテキストの中心に揃える */
+.fileLink svg {
+  align-self: center;
+  flex-shrink: 0;
+}
+
+.fileLinkLabel code {
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: inherit;
+}

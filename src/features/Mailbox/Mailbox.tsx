@@ -16,6 +16,7 @@ import {
   ComposeWindow,
   ContactList,
   ContactView,
+  FileViewer,
   FolderSidebar,
   GlobalLoader,
   HomeView,
@@ -29,6 +30,7 @@ import {
   useAgents,
   useCompose,
   useDeleteMessage,
+  useFileViewer,
   useNotificationSound,
   useReplyChime,
   useSendMessage,
@@ -66,6 +68,8 @@ export const Mailbox = () => {
   const agentEditor = useAgentEditor(agents.reload);
   const theme = useTheme();
   const notificationSound = useNotificationSound();
+  /** 本文に書かれた実行計画などの md ファイルを、その場で読むためのビューア */
+  const fileViewer = useFileViewer();
 
   /** 返信が届いたら通知音で知らせる（画面を見ていなくても作業の完了が分かるように） */
   useReplyChime(threads.receivedCount, notificationSound.play);
@@ -470,6 +474,7 @@ export const Mailbox = () => {
               onRetry={handleRetry}
               onCancelFailure={handleCancelFailure}
               dismissing={failureDeleter.deleting}
+              onOpenFile={fileViewer.open}
             />
           </>
         )}
@@ -488,6 +493,18 @@ export const Mailbox = () => {
           onSend={handleSend}
           onSaveDraft={() => void compose.saveDraft()}
           onClose={compose.close}
+        />
+      )}
+
+      {fileViewer.target && (
+        <FileViewer
+          path={fileViewer.target}
+          file={fileViewer.file}
+          loading={fileViewer.loading}
+          error={fileViewer.error}
+          onOpenFile={fileViewer.open}
+          onReload={fileViewer.reload}
+          onClose={fileViewer.close}
         />
       )}
 

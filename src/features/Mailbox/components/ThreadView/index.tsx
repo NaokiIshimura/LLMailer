@@ -21,6 +21,8 @@ interface ThreadViewProps {
   readonly onCancelFailure: (failed: Message) => void;
   /** 失敗した配信の片付け（再送後の削除・取り消し）リクエスト中か */
   readonly dismissing: boolean;
+  /** 本文に書かれたファイルパスをビューアで開く */
+  readonly onOpenFile: (filePath: string, agentId?: string) => void;
 }
 
 /** スレッド本文 */
@@ -34,6 +36,7 @@ export const ThreadView = ({
   onRetry,
   onCancelFailure,
   dismissing,
+  onOpenFile,
 }: ThreadViewProps) => {
   // 再取得中でも、すでに開いているスレッドがあれば内容を出し続ける
   if (loading && !thread) {
@@ -94,6 +97,7 @@ export const ThreadView = ({
                   message.status === 'failed' ? onCancelFailure : undefined
                 }
                 dismissing={dismissing}
+                onOpenFile={onOpenFile}
               />
             ))}
           </Fragment>

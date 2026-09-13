@@ -34,6 +34,12 @@ export {
 } from './useNotificationSound';
 export { useReplyChime } from './useReplyChime';
 export { useSendMessage, type UseSendMessageResult } from './useSendMessage';
+export {
+  useTemplateEditor,
+  type TemplateForm,
+  type UseTemplateEditorResult,
+} from './useTemplateEditor';
+export { useTemplates, type UseTemplatesResult } from './useTemplates';
 export { useTheme, type UseThemeResult } from './useTheme';
 export { useThreadDetail, type UseThreadDetailResult } from './useThreadDetail';
 export { useThreads, type UseThreadsResult } from './useThreads';

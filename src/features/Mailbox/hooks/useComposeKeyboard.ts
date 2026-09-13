@@ -1,11 +1,14 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent, RefObject } from 'react';
+import { readSendShortcutLabel } from '@/lib/composeShortcut';
 
 export interface UseComposeKeyboardResult {
   /** 送信ボタン。本文からの Tab の移動先にする */
   readonly sendButtonRef: RefObject<HTMLButtonElement | null>;
+  /** 画面に出す送信ショートカットの表記（⌘ + Enter / Ctrl + Enter） */
+  readonly sendShortcut: string;
   /** 本文の keydown に渡すハンドラ */
   readonly handleBodyKeyDown: (
     event: ReactKeyboardEvent<HTMLTextAreaElement>
@@ -23,6 +26,8 @@ export const useComposeKeyboard = (
   canSend: boolean
 ): UseComposeKeyboardResult => {
   const sendButtonRef = useRef<HTMLButtonElement>(null);
+  // 使っているキーボードは変わらないため、最初に見分けたものを持ち続ける
+  const [sendShortcut] = useState(readSendShortcutLabel);
 
   const handleBodyKeyDown = useCallback(
     (event: ReactKeyboardEvent<HTMLTextAreaElement>): void => {
@@ -58,5 +63,5 @@ export const useComposeKeyboard = (
     [canSend, onSend]
   );
 
-  return { sendButtonRef, handleBodyKeyDown };
+  return { sendButtonRef, sendShortcut, handleBodyKeyDown };
 };

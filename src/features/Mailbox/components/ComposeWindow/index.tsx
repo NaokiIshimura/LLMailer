@@ -55,7 +55,7 @@ export const ComposeWindow = ({
 
   const canSend =
     draft.agentIds.length > 0 && draft.body.trim().length > 0 && !sending;
-  const { sendButtonRef, handleBodyKeyDown } = useComposeKeyboard(
+  const { sendButtonRef, sendShortcut, handleBodyKeyDown } = useComposeKeyboard(
     onSend,
     canSend
   );
@@ -218,7 +218,7 @@ export const ComposeWindow = ({
           className={styles.sendButton}
           onClick={onSend}
           disabled={!canSend}
-          title="⌘（Ctrl）+ Enter でも送信できます"
+          title={`${sendShortcut} でも送信できます`}
         >
           {sending ? <Spinner /> : '送信'}
         </button>
@@ -233,7 +233,7 @@ export const ComposeWindow = ({
         <span className={styles.hint}>
           複数宛先で返信を比較できます。
           <Icon name="warning" size={12} /> の宛先はファイルを変更します。
-          ⌘（Ctrl）+ Enter で送信できます
+          {sendShortcut} で送信できます
         </span>
       </footer>
     </div>

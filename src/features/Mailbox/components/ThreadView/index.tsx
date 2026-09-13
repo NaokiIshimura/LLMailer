@@ -11,11 +11,15 @@ interface ThreadViewProps {
   readonly thread: Thread | null;
   /** 「送信とその返信」のまとまり。新しいものが先頭 */
   readonly exchanges: readonly (readonly Message[])[];
+  /** 開いたあとに届いた、まだ読んでいない返信の件数 */
+  readonly newReplyCount: number;
   readonly loading: boolean;
   readonly error: string | null;
   /** エージェント ID → 表示名 */
   readonly agentName: (agentId: string) => string;
   readonly onReply: () => void;
+  /** 届いたことに気づいた返信を既読にする */
+  readonly onMarkRead: () => void;
   readonly onRetry: (failed: Message) => void;
   /** 再送せずに失敗した配信を取り消す */
   readonly onCancelFailure: (failed: Message) => void;
@@ -33,10 +37,12 @@ interface ThreadViewProps {
 export const ThreadView = ({
   thread,
   exchanges,
+  newReplyCount,
   loading,
   error,
   agentName,
   onReply,
+  onMarkRead,
   onRetry,
   onCancelFailure,
   dismissing,
@@ -115,6 +121,26 @@ export const ThreadView = ({
           返信
         </button>
       </header>
+
+      {/*
+        開いたままのスレッドに届いた返信は自動で既読にしないため、ここで気づけるようにする。
+        席を外していても、戻ってきたときに未読が残っている。
+      */}
+      {newReplyCount > 0 && (
+        <div className={styles.newReplyBar}>
+          <span className={styles.newReplyText}>
+            <Icon name="mail" size={14} />
+            新しい返信が {newReplyCount} 件届きました
+          </span>
+          <button
+            type="button"
+            className={styles.newReplyButton}
+            onClick={onMarkRead}
+          >
+            既読にする
+          </button>
+        </div>
+      )}
 
       <div className={styles.messages}>
         {/* 対応中の返信もメッセージの 1 通として並ぶ（MessageItem が表示を切り替える） */}

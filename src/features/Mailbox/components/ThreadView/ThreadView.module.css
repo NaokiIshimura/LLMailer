@@ -14,10 +14,25 @@
   border-bottom: 1px solid var(--color-border);
 }
 
+/* 件名が長くても返信ボタンを押し出さない */
+.heading {
+  min-width: 0;
+}
+
+.subjectRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
 .subject {
   margin: 0;
+  overflow: hidden;
   font-size: 16px;
   font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .participants {
@@ -40,6 +55,29 @@
 
 .replyButton:hover:not(:disabled) {
   background: var(--color-accent-weak);
+}
+
+/* 件名の横に置く控えめなアイコンボタン（主な操作は返信であることを崩さない） */
+.archiveButton {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: none;
+  border-radius: var(--radius);
+  color: var(--color-text-muted);
+}
+
+.archiveButton:hover:not(:disabled) {
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+}
+
+.archiveButton:disabled {
+  opacity: 0.5;
 }
 
 .messages {

@@ -224,6 +224,11 @@ export interface Thread {
   readonly snippet: string;
   readonly hasPending: boolean;
   readonly hasFailure: boolean;
+  /**
+   * 対応が済んだものとして片付けられているか。
+   * アーカイブしたあとにメッセージが加わると、やり取りが再開したものとして false に戻る。
+   */
+  readonly archived: boolean;
 }
 
 /**
@@ -231,19 +236,32 @@ export interface Thread {
  * 'home' は概要（ホーム）、'contacts' はアドレス帳、'settings' は設定で、
  * いずれもスレッド一覧を出さない。
  * 'mailbox' は送受信を区別せず、すべてのスレッドを 1 つの一覧にまとめる。
+ * 'archive' は対応が済んだものとして 'mailbox' から外したスレッドを出す。
  */
-export type Folder = 'home' | 'mailbox' | 'drafts' | 'contacts' | 'settings';
+export type Folder =
+  | 'home'
+  | 'mailbox'
+  | 'archive'
+  | 'drafts'
+  | 'contacts'
+  | 'settings';
 
 export const FOLDER_LABELS: Readonly<Record<Folder, string>> = {
   home: 'ホーム',
   mailbox: 'メールボックス',
+  archive: 'アーカイブ',
   drafts: '下書き',
   contacts: 'アドレス帳',
   settings: '設定',
 };
 
 /** メールの一覧を出すフォルダ（サイドバーで宛先一覧より上に並べる） */
-export const MAIL_FOLDERS: readonly Folder[] = ['home', 'mailbox', 'drafts'];
+export const MAIL_FOLDERS: readonly Folder[] = [
+  'home',
+  'mailbox',
+  'archive',
+  'drafts',
+];
 
 /** メール以外の画面（サイドバーで宛先一覧より下に並べる） */
 export const TOOL_FOLDERS: readonly Folder[] = ['contacts', 'settings'];
@@ -253,7 +271,7 @@ export const FOLDERS: readonly Folder[] = [...MAIL_FOLDERS, ...TOOL_FOLDERS];
 
 /** スレッドの一覧と本文を出すフォルダか（ホーム・アドレス帳・設定は専用の画面を出す） */
 export const isThreadPaneFolder = (folder: Folder): boolean =>
-  folder === 'mailbox' || folder === 'drafts';
+  folder === 'mailbox' || folder === 'archive' || folder === 'drafts';
 
 export const NO_SUBJECT = '(件名なし)';
 
@@ -290,6 +308,19 @@ export type CreateAgentRequest = Omit<Agent, 'id'>;
  * ID は送受信済みメッセージから参照される識別子なので、後から変更しない。
  */
 export type UpdateAgentRequest = Omit<Agent, 'id'>;
+
+/**
+ * PATCH /api/threads/[id] のリクエストボディ。
+ *
+ * スレッドは Message[] から導出されるまとまりで、作成も削除もしない。
+ * 読んだ・片付けたという状態の更新だけを受け付ける。
+ */
+export interface UpdateThreadRequest {
+  /** true でスレッド内の未読をすべて既読にする（ボディを省略したときと同じ） */
+  readonly read?: boolean;
+  /** true でアーカイブ、false で解除 */
+  readonly archived?: boolean;
+}
 
 /** 下書き保存のリクエストボディ */
 export interface SaveDraftRequest {

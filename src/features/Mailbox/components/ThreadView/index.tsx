@@ -21,6 +21,10 @@ interface ThreadViewProps {
   readonly onCancelFailure: (failed: Message) => void;
   /** 失敗した配信の片付け（再送後の削除・取り消し）リクエスト中か */
   readonly dismissing: boolean;
+  /** 対応が済んだスレッドを片付ける（アーカイブ済みなら解除する） */
+  readonly onArchive: (archived: boolean) => void;
+  /** アーカイブの切り替えリクエスト中か */
+  readonly archiving: boolean;
   /** 本文に書かれたファイルパスをビューアで開く */
   readonly onOpenFile: (filePath: string, agentId?: string) => void;
 }
@@ -36,6 +40,8 @@ export const ThreadView = ({
   onRetry,
   onCancelFailure,
   dismissing,
+  onArchive,
+  archiving,
   onOpenFile,
 }: ThreadViewProps) => {
   // 再取得中でも、すでに開いているスレッドがあれば内容を出し続ける
@@ -67,11 +73,35 @@ export const ThreadView = ({
     );
   }
 
+  const archiveLabel = thread.archived
+    ? 'このスレッドをメールボックスへ戻す'
+    : 'このスレッドをアーカイブする';
+
   return (
     <section className={styles.view}>
       <header className={styles.header}>
-        <div>
-          <h1 className={styles.subject}>{thread.subject}</h1>
+        <div className={styles.heading}>
+          <div className={styles.subjectRow}>
+            <h1 className={styles.subject}>{thread.subject}</h1>
+            {/*
+              対応が済んだスレッドを片付ける（アーカイブフォルダでは戻す）。
+              返信の隣に置くと取り違えて押されるため、件名の横まで離す。
+            */}
+            <button
+              type="button"
+              className={styles.archiveButton}
+              onClick={() => onArchive(!thread.archived)}
+              disabled={archiving}
+              aria-label={archiveLabel}
+              title={archiveLabel}
+            >
+              {archiving ? (
+                <Spinner />
+              ) : (
+                <Icon name={thread.archived ? 'inbox' : 'archive'} size={16} />
+              )}
+            </button>
+          </div>
           <p className={styles.participants}>
             {thread.participants.map(agentName).join(', ')} ・{' '}
             {thread.messageCount} 通

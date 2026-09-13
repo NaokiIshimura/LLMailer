@@ -74,7 +74,9 @@ npm run dev
 エージェントにメールアドレスは無い。宛先は名前で選び、内部では画面に出さない ID で参照する。
 名前は画面で宛先を見分ける唯一の手がかりなので、既にある名前での追加・変更は弾かれる（409）。
 
-定義は `data/agents.json`（初回起動時に生成）。
+定義は `data/agents/` 配下の 2 ファイルに分かれている。
+既定は `data/agents/default.json`（コミット対象・読み取りのみ）、
+画面から追加したぶんは `data/agents/user.json`（`.gitignore` 済み）に入る。
 
 ```jsonc
 {
@@ -156,8 +158,13 @@ src/
 
 ## データ
 
-- `data/agents.json` — エージェント定義（コミット対象）
+- `data/agents/default.json` — 既定のエージェント（コミット対象。画面からは変更・削除できない）
+- `data/agents/user.json` — 画面から追加したエージェント（`.gitignore` 済み）
 - `data/messages.json` — 送受信したメッセージ（`.gitignore` 済み）
+
+既定と利用者ぶんを分けているのは、個人のエージェント（作業ディレクトリに絶対パスが入る）を
+git の差分に出さないため。1 ファイルだった頃の `data/agents.json` が残っている場合は、
+既定を除いたぶんが `data/agents/user.json` へ自動で引き継がれる（引き継ぎ後は削除してよい）。
 
 メッセージは相手のエージェント（`agentIds`）だけを持ち、自分が出したものかどうかは
 配信状態（`status`）から導出する。アドレスで宛先を書いていた頃のデータは読み込み時に変換される。
@@ -177,6 +184,6 @@ npm run build   # 型チェック込みのビルド
 | --- | --- |
 | ストリーミング受信 | `--output-format stream-json` と `Transport.deliverStream()` を追加し SSE 化 |
 | コードのシンタックスハイライト | `MarkdownBody` の `code` コンポーネントを差し替える |
-| エージェント CRUD | アドレス帳の詳細画面に編集フォームを足す（現在は `data/agents.json` を直接編集） |
+| エージェント CRUD | アドレス帳の詳細画面に編集フォームを足す（現在は `data/agents/user.json` を直接編集） |
 | 実メール連携 | `Transport` を満たす `MailTransport`（SMTP/IMAP）を追加 |
 | SQLite 移行 | `lib/store` のリポジトリ実装を差し替え |

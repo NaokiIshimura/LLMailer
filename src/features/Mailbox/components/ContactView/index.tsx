@@ -1,13 +1,16 @@
 'use client';
 
-import { isDefaultAgentId } from '@/lib/agents/defaultAgents';
-import { isFullAccessAgent, type Agent } from '@/types/mail';
+import {
+  isFullAccessAgent,
+  type Agent,
+  type ListedAgent,
+} from '@/types/mail';
 import { Icon } from '../Icon';
 import { PermissionBadge } from '../PermissionBadge';
 import styles from './ContactView.module.css';
 
 interface ContactViewProps {
-  readonly agent: Agent | null;
+  readonly agent: ListedAgent | null;
   readonly deleting: boolean;
   readonly onCompose: (agentIds: readonly string[]) => void;
   readonly onEdit: (agent: Agent) => void;
@@ -39,7 +42,7 @@ export const ContactView = ({
 
   const fullAccess = isFullAccessAgent(agent);
   // 既定のエージェントはアプリの土台なので、画面からは変更・削除させない
-  const isDefault = isDefaultAgentId(agent.id);
+  const { isDefault } = agent;
 
   return (
     <section className={styles.view}>
@@ -171,7 +174,7 @@ export const ContactView = ({
         <p className={styles.hint}>
           {isDefault
             ? '既定のエージェントのため、画面からは変更・削除できません。'
-            : '編集で変えられない項目（許可ツールなど）は data/agents.json で調整できます。'}
+            : '編集で変えられない項目（許可ツールなど）は data/agents/user.json で調整できます。'}
         </p>
       </div>
     </section>

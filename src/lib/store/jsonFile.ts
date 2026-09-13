@@ -9,12 +9,39 @@ const DATA_DIR = path.join(process.cwd(), 'data');
  */
 const writeQueues = new Map<string, Promise<unknown>>();
 
+/** ファイル名は data ディレクトリからの相対。'agents/user.json' のように階層を含められる */
 const filePath = (fileName: string): string => path.join(DATA_DIR, fileName);
+
+/** 書き込み先のディレクトリを用意する（data 直下とは限らない） */
+const ensureDirectory = async (fileName: string): Promise<void> => {
+  await mkdir(path.dirname(filePath(fileName)), { recursive: true });
+};
 
 const isNotFound = (error: unknown): boolean =>
   typeof error === 'object' &&
   error !== null &&
   (error as { code?: string }).code === 'ENOENT';
+
+/**
+ * JSON ファイルを読み込む。存在しない場合は既定値を返すだけで、ファイルは作らない。
+ *
+ * リポジトリに同梱している読み取り専用のファイルに使う。
+ * 読んだだけで書き戻すと、意図しない差分が出てしまう。
+ */
+export const readJsonFileIfExists = async <T>(
+  fileName: string,
+  defaultValue: T
+): Promise<T> => {
+  try {
+    const raw = await readFile(filePath(fileName), 'utf-8');
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    if (isNotFound(error)) {
+      return defaultValue;
+    }
+    throw error;
+  }
+};
 
 /** JSON ファイルを読み込む。存在しない場合は既定値で初期化する */
 export const readJsonFile = async <T>(
@@ -42,7 +69,7 @@ export const writeJsonFile = async <T>(
   const next = previous
     .catch(() => undefined)
     .then(async () => {
-      await mkdir(DATA_DIR, { recursive: true });
+      await ensureDirectory(fileName);
       await writeFile(
         filePath(fileName),
         `${JSON.stringify(value, null, 2)}\n`,
@@ -85,7 +112,7 @@ export const updateJsonFile = async <T, R>(
       }
 
       const { next, result } = updater(current);
-      await mkdir(DATA_DIR, { recursive: true });
+      await ensureDirectory(fileName);
       await writeFile(
         filePath(fileName),
         `${JSON.stringify(next, null, 2)}\n`,

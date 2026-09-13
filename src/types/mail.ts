@@ -55,6 +55,17 @@ export interface Agent {
   readonly timeoutMs?: number;
 }
 
+/**
+ * 一覧で返すエージェント。
+ *
+ * 既定かどうかは data/agents/default.json に入っているかで決まり、
+ * このファイルはサーバーでしか読めない。画面から見分けられるよう、
+ * 一覧を返すときにサーバーが付ける（保存する値ではない）。
+ */
+export interface ListedAgent extends Agent {
+  readonly isDefault: boolean;
+}
+
 /** 読み取り専用エージェントに許可するツール */
 export const READ_ONLY_TOOLS: readonly string[] = [
   'Read',

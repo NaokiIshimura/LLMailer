@@ -355,14 +355,23 @@ export const Mailbox = () => {
 
   /** スレッドの最後のエージェント発言に返信する */
   const handleReply = useCallback(() => {
+    const reversed = [...shownMessages].reverse();
     // エージェントの発言が無ければ、自分の送信（＝同じ宛先）に対する追記として返信する
     const target =
-      [...shownMessages].reverse().find((message) => !isOutgoingMessage(message)) ??
+      reversed.find((message) => !isOutgoingMessage(message)) ??
       shownMessages[shownMessages.length - 1];
 
-    if (target) {
-      compose.openReply(target);
+    if (!target) {
+      return;
     }
+
+    /*
+      宛先の初期値は直近の自分の送信に合わせる。
+      最後の受信 1 通の相手を既定にすると、複数宛先のスレッドで
+      返信のたびに宛先が 1 件へ減っていくため。
+    */
+    const lastSent = reversed.find((message) => message.status === 'sent');
+    compose.openReply(target, lastSent?.agentIds ?? target.agentIds);
   }, [compose, shownMessages]);
 
   /** ホームから選んだスレッドは、すべてのやり取りが出るメールボックスで開く */
@@ -602,7 +611,6 @@ export const Mailbox = () => {
           sending={sender.sending}
           saving={compose.saving}
           error={sender.error}
-          agentName={agentName}
           onChange={compose.update}
           onToggleRecipient={compose.toggleRecipient}
           onSend={handleSend}

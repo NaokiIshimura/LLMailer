@@ -25,8 +25,6 @@ interface ComposeWindowProps {
   readonly sending: boolean;
   readonly saving: boolean;
   readonly error: string | null;
-  /** エージェント ID → 表示名 */
-  readonly agentName: (agentId: string) => string;
   readonly onChange: (patch: Partial<ComposeDraft>) => void;
   readonly onToggleRecipient: (agentId: string) => void;
   readonly onSend: () => void;
@@ -42,7 +40,6 @@ export const ComposeWindow = ({
   sending,
   saving,
   error,
-  agentName,
   onChange,
   onToggleRecipient,
   onSend,
@@ -99,7 +96,7 @@ export const ComposeWindow = ({
       // 最大化中は CSS 側の大きさに任せる
       style={maximized ? undefined : { width: size.width, height: size.height }}
       role="dialog"
-      aria-label={draft.locked ? '返信' : '新規作成'}
+      aria-label={draft.subjectLocked ? '返信' : '新規作成'}
     >
       {/* ウィンドウは右下に固定されているため、広げるつまみは左上と上辺・左辺に置く */}
       <div
@@ -119,7 +116,7 @@ export const ComposeWindow = ({
       />
 
       <header className={styles.header}>
-        <span>{draft.locked ? '返信' : '新規作成'}</span>
+        <span>{draft.subjectLocked ? '返信' : '新規作成'}</span>
         <div className={styles.headerActions}>
           <button
             type="button"
@@ -147,48 +144,43 @@ export const ComposeWindow = ({
       <div className={styles.fields}>
         <div className={styles.field}>
           <span className={styles.label}>宛先</span>
-          {draft.locked ? (
-            <span className={styles.lockedRecipients}>
-              {draft.agentIds.map(agentName).join(', ')}
-            </span>
-          ) : (
-            <div className={styles.recipients}>
-              {agents.map((agent) => {
-                const selected = draft.agentIds.includes(agent.id);
-                const fullAccess = isFullAccessAgent(agent);
-                return (
-                  <button
-                    key={agent.id}
-                    type="button"
-                    className={`${styles.recipient} ${
-                      selected ? styles.recipientSelected : ''
-                    }`}
-                    onClick={() => onToggleRecipient(agent.id)}
-                    aria-pressed={selected}
-                    title={`${agent.description ?? agent.name}${
-                      fullAccess
-                        ? '（ファイル変更・コマンド実行が可能）'
-                        : '（読み取り専用）'
-                    }`}
-                  >
-                    {selected && <Icon name="check" size={13} />}
-                    {agent.name}
-                    {fullAccess && (
-                      <span className={styles.warn}>
-                        <Icon name="warning" size={13} />
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          {/* 返信でも宛先は選び直せる（スレッドの途中で相手を替えられる） */}
+          <div className={styles.recipients}>
+            {agents.map((agent) => {
+              const selected = draft.agentIds.includes(agent.id);
+              const fullAccess = isFullAccessAgent(agent);
+              return (
+                <button
+                  key={agent.id}
+                  type="button"
+                  className={`${styles.recipient} ${
+                    selected ? styles.recipientSelected : ''
+                  }`}
+                  onClick={() => onToggleRecipient(agent.id)}
+                  aria-pressed={selected}
+                  title={`${agent.description ?? agent.name}${
+                    fullAccess
+                      ? '（ファイル変更・コマンド実行が可能）'
+                      : '（読み取り専用）'
+                  }`}
+                >
+                  {selected && <Icon name="check" size={13} />}
+                  {agent.name}
+                  {fullAccess && (
+                    <span className={styles.warn}>
+                      <Icon name="warning" size={13} />
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className={styles.field}>
           <span className={styles.label}>件名</span>
-          {draft.locked ? (
-            <span className={styles.lockedRecipients}>{draft.subject}</span>
+          {draft.subjectLocked ? (
+            <span className={styles.lockedValue}>{draft.subject}</span>
           ) : (
             <input
               type="text"
@@ -239,7 +231,7 @@ export const ComposeWindow = ({
           {saving ? '保存中…' : '下書き保存'}
         </button>
         <span className={styles.hint}>
-          複数宛先で返信を比較できます。
+          複数宛先で返信を比較できます。返信でも宛先は変えられます。
           <Icon name="warning" size={12} /> の宛先はファイルを変更します。
           {sendShortcut} で送信できます
         </span>

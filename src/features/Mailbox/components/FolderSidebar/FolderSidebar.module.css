@@ -50,6 +50,21 @@
   font-weight: 700;
 }
 
+/* 対応中ラベルなどが並んでも、フォルダ名から先に詰まるようにする */
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* フォルダ名の右側に並ぶラベル・件数をひとまとめにする */
+.trailing {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+}
+
 /* 宛先の名前は長くなりがちなので、幅に収まらない分は省略する */
 .agentName {
   overflow: hidden;
@@ -78,4 +93,30 @@
   color: var(--color-text-muted);
   font-size: 12px;
   font-weight: 600;
+}
+
+/**
+ * 対応中。フォルダ名の幅を取らないよう、文字は出さずにドットだけで示す。
+ * 進行中であることが一目で分かるよう点滅させる
+ */
+.pendingDot {
+  flex-shrink: 0;
+  /* 文字を添えないぶん、一覧のタグ内のドットより少し大きくする */
+  width: 8px;
+  height: 8px;
+  background: var(--color-accent);
+  border-radius: 50%;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pendingDot {
+    animation: none;
+  }
 }

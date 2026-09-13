@@ -411,8 +411,10 @@ export const Mailbox = () => {
           selectedAgentId={threads.agentId}
           agents={agents.agents}
           unreadCount={threads.unreadCount}
+          pendingCount={pendingCount}
           draftCount={threads.draftCount}
           agentUnreadCounts={threads.agentUnreadCounts}
+          agentPendingCounts={threads.agentPendingCounts}
           onSelectFolder={threads.selectFolder}
           onSelectAgent={threads.selectAgent}
           onCompose={compose.openNew}

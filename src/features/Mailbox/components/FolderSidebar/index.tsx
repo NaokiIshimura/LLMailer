@@ -16,8 +16,12 @@ interface FolderSidebarProps {
   readonly selectedAgentId: string | null;
   readonly agents: readonly Agent[];
   readonly unreadCount: number;
+  /** 対応中（応答待ち）の件数 */
+  readonly pendingCount: number;
   readonly draftCount: number;
   readonly agentUnreadCounts: Readonly<Record<string, number>>;
+  /** 宛先ごとの対応中件数（エージェント ID → 件数） */
+  readonly agentPendingCounts: Readonly<Record<string, number>>;
   readonly onSelectFolder: (folder: Folder) => void;
   readonly onSelectAgent: (agentId: string) => void;
   readonly onCompose: (to?: readonly string[]) => void;
@@ -33,8 +37,10 @@ export const FolderSidebar = ({
   selectedAgentId,
   agents,
   unreadCount,
+  pendingCount,
   draftCount,
   agentUnreadCounts,
+  agentPendingCounts,
   onSelectFolder,
   onSelectAgent,
   onCompose,
@@ -69,9 +75,18 @@ export const FolderSidebar = ({
             onClick={() => onSelectFolder(item)}
             aria-current={selected(item)}
           >
-            <span>{FOLDER_LABELS[item]}</span>
-            {item === 'mailbox' && unreadCount > 0 && (
-              <span className={styles.badge}>{unreadCount}</span>
+            <span className={styles.label}>{FOLDER_LABELS[item]}</span>
+            {/* 対応中は一覧を開かなくても分かるよう、メールボックスにも出す。
+                フォルダ名が詰まらないよう、文字は添えずに点滅するドットだけにする */}
+            {item === 'mailbox' && (pendingCount > 0 || unreadCount > 0) && (
+              <span className={styles.trailing}>
+                {pendingCount > 0 && (
+                  <span className={styles.pendingDot} aria-label="対応中" />
+                )}
+                {unreadCount > 0 && (
+                  <span className={styles.badge}>{unreadCount}</span>
+                )}
+              </span>
             )}
             {item === 'drafts' && draftCount > 0 && (
               <span className={styles.countBadge}>{draftCount}</span>
@@ -94,8 +109,19 @@ export const FolderSidebar = ({
           title={agent.description ?? agent.name}
         >
           <span className={styles.agentName}>{agent.name}</span>
-          {(agentUnreadCounts[agent.id] ?? 0) > 0 && (
-            <span className={styles.badge}>{agentUnreadCounts[agent.id]}</span>
+          {/* 宛先ごとの対応中も、メールボックスと同じくドットだけで示す */}
+          {((agentPendingCounts[agent.id] ?? 0) > 0 ||
+            (agentUnreadCounts[agent.id] ?? 0) > 0) && (
+            <span className={styles.trailing}>
+              {(agentPendingCounts[agent.id] ?? 0) > 0 && (
+                <span className={styles.pendingDot} aria-label="対応中" />
+              )}
+              {(agentUnreadCounts[agent.id] ?? 0) > 0 && (
+                <span className={styles.badge}>
+                  {agentUnreadCounts[agent.id]}
+                </span>
+              )}
+            </span>
           )}
         </button>
       ))}
@@ -110,7 +136,7 @@ export const FolderSidebar = ({
           onClick={() => onSelectFolder(item)}
           aria-current={selected(item)}
         >
-          <span>{FOLDER_LABELS[item]}</span>
+          <span className={styles.label}>{FOLDER_LABELS[item]}</span>
           {item === 'contacts' && agents.length > 0 && (
             <span className={styles.countBadge}>{agents.length}</span>
           )}

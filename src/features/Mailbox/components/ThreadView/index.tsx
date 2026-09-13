@@ -2,6 +2,7 @@
 
 import { Fragment } from 'react';
 import type { Message, Thread } from '@/types/mail';
+import { useMarkReadOnInteraction } from '../../hooks';
 import { Icon } from '../Icon';
 import { Spinner } from '../Loader';
 import { MessageItem } from '../MessageItem';
@@ -50,6 +51,12 @@ export const ThreadView = ({
   archiving,
   onOpenFile,
 }: ThreadViewProps) => {
+  // 知らせが出ているあいだは、本文を触った時点で読み始めたとみなして既読にする
+  const { interactionRef, markRead } = useMarkReadOnInteraction(
+    newReplyCount > 0,
+    onMarkRead
+  );
+
   // 再取得中でも、すでに開いているスレッドがあれば内容を出し続ける
   if (loading && !thread) {
     return (
@@ -84,7 +91,7 @@ export const ThreadView = ({
     : 'このスレッドをアーカイブする';
 
   return (
-    <section className={styles.view}>
+    <section className={styles.view} ref={interactionRef}>
       <header className={styles.header}>
         <div className={styles.heading}>
           <div className={styles.subjectRow}>
@@ -125,6 +132,7 @@ export const ThreadView = ({
       {/*
         開いたままのスレッドに届いた返信は自動で既読にしないため、ここで気づけるようにする。
         席を外していても、戻ってきたときに未読が残っている。
+        戻ってきて本文を触れば消えるが、押せば済むようにボタンも残しておく。
       */}
       {newReplyCount > 0 && (
         <div className={styles.newReplyBar}>
@@ -135,7 +143,7 @@ export const ThreadView = ({
           <button
             type="button"
             className={styles.newReplyButton}
-            onClick={onMarkRead}
+            onClick={markRead}
           >
             既読にする
           </button>

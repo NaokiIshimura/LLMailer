@@ -73,14 +73,12 @@ export const FolderSidebar = ({
             aria-current={selected(item)}
           >
             <span className={styles.label}>{FOLDER_LABELS[item]}</span>
-            {/* 対応中は一覧を開かなくても分かるよう、メールボックスにも出す */}
+            {/* 対応中は一覧を開かなくても分かるよう、メールボックスにも出す。
+                フォルダ名が詰まらないよう、文字は添えずに点滅するドットだけにする */}
             {item === 'mailbox' && (pendingCount > 0 || unreadCount > 0) && (
               <span className={styles.trailing}>
                 {pendingCount > 0 && (
-                  <span className={styles.pendingTag}>
-                    <span className={styles.pendingPulse} aria-hidden="true" />
-                    対応中
-                  </span>
+                  <span className={styles.pendingDot} aria-label="対応中" />
                 )}
                 {unreadCount > 0 && (
                   <span className={styles.badge}>{unreadCount}</span>

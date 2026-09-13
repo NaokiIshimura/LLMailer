@@ -39,8 +39,7 @@
 
 .panes {
   display: grid;
-  /* 左は「メールボックス」に対応中ラベルと未読バッジが並んでも収まる幅にする */
-  grid-template-columns: 264px minmax(260px, 340px) 1fr;
+  grid-template-columns: 220px minmax(260px, 340px) 1fr;
   min-height: 0;
 }
 

@@ -1,10 +1,24 @@
 import { randomUUID } from 'node:crypto';
-import { DEFAULT_AGENTS, isDefaultAgentId } from '@/lib/agents/defaultAgents';
-import type { Agent, CreateAgentRequest, UpdateAgentRequest } from '@/types/mail';
+import type {
+  Agent,
+  CreateAgentRequest,
+  ListedAgent,
+  UpdateAgentRequest,
+} from '@/types/mail';
 import { legacyAddressToAgentId } from './legacy';
-import { readJsonFile, updateJsonFile } from './jsonFile';
+import { readJsonFileIfExists, updateJsonFile } from './jsonFile';
 
-const FILE_NAME = 'agents.json';
+/**
+ * 既定のエージェント。リポジトリに同梱し、読むだけで書き換えない。
+ * アプリの土台として常に居てほしいので、画面からは変更・削除させない。
+ */
+const DEFAULT_FILE = 'agents/default.json';
+
+/** 画面から追加したエージェント。CRUD の対象で、git には含めない */
+const USER_FILE = 'agents/user.json';
+
+/** 既定と利用者ぶんが 1 つになっていた頃のファイル（読み込み時に引き継ぐ） */
+const LEGACY_FILE = 'agents.json';
 
 /**
  * 追加・変更・削除が行えなかった理由。
@@ -36,6 +50,50 @@ const toAgent = ({ address, id, ...agent }: StoredAgent): Agent => ({
 const toAgents = (stored: readonly StoredAgent[]): readonly Agent[] =>
   stored.map(toAgent);
 
+const readAgentFile = async (fileName: string): Promise<readonly Agent[]> =>
+  toAgents(await readJsonFileIfExists<readonly StoredAgent[]>(fileName, []));
+
+/**
+ * 利用者が追加したエージェントを読む。
+ *
+ * user.json がまだ無ければ、1 ファイルだった頃の data/agents.json から引き継ぐ。
+ * 既定のぶんは default.json 側が持つので、ここでは常に取り除く。
+ * （引き継いだ内容は、次の追加・変更・削除で user.json として書き出される）
+ */
+const readUserAgents = async (
+  defaults: readonly Agent[]
+): Promise<readonly Agent[]> => {
+  const stored = await readJsonFileIfExists<readonly StoredAgent[] | null>(
+    USER_FILE,
+    null
+  );
+  const agents = stored ? toAgents(stored) : await readAgentFile(LEGACY_FILE);
+  const defaultIds = new Set(defaults.map((agent) => agent.id));
+  return agents.filter((agent) => !defaultIds.has(agent.id));
+};
+
+/**
+ * user.json を読み込み → 更新 → 書き込みする。
+ *
+ * 既定は別ファイルなので、ここで書き換えるのは利用者ぶんだけ。
+ * 同名の判定などに要るため、既定の一覧も updater へ渡す。
+ */
+const updateUserAgents = async <R>(
+  updater: (
+    current: readonly Agent[],
+    defaults: readonly Agent[]
+  ) => { readonly next: readonly Agent[]; readonly result: R }
+): Promise<R> => {
+  const defaults = await readAgentFile(DEFAULT_FILE);
+  // user.json がまだ無いときは、旧ファイルから引き継いだ内容を初期値にする
+  const fallback = await readUserAgents(defaults);
+  return updateJsonFile<readonly StoredAgent[], R>(
+    USER_FILE,
+    fallback,
+    (stored) => updater(toAgents(stored), defaults)
+  );
+};
+
 /**
  * 同じ名前のエージェントが既に居るか。
  *
@@ -49,10 +107,19 @@ const hasSameName = (
 ): boolean =>
   agents.some((agent) => agent.id !== exceptId && agent.name === name);
 
-export const listAgents = async (): Promise<readonly Agent[]> =>
-  toAgents(await readJsonFile<readonly StoredAgent[]>(FILE_NAME, DEFAULT_AGENTS));
+/** 既定を先、利用者が追加したぶんを後に並べる */
+export const listAgents = async (): Promise<readonly ListedAgent[]> => {
+  const defaults = await readAgentFile(DEFAULT_FILE);
+  const users = await readUserAgents(defaults);
+  return [
+    ...defaults.map((agent) => ({ ...agent, isDefault: true })),
+    ...users.map((agent) => ({ ...agent, isDefault: false })),
+  ];
+};
 
-export const findAgent = async (id: string): Promise<Agent | undefined> => {
+export const findAgent = async (
+  id: string
+): Promise<ListedAgent | undefined> => {
   const agents = await listAgents();
   return agents.find((agent) => agent.id === id);
 };
@@ -66,70 +133,51 @@ export const findAgent = async (id: string): Promise<Agent | undefined> => {
 export const createAgent = async (
   fields: CreateAgentRequest
 ): Promise<AgentMutation<Agent>> =>
-  updateJsonFile<readonly StoredAgent[], AgentMutation<Agent>>(
-    FILE_NAME,
-    DEFAULT_AGENTS,
-    (stored) => {
-      const current = toAgents(stored);
-      if (hasSameName(current, fields.name)) {
-        return { next: stored, result: { ok: false, error: 'duplicateName' } };
-      }
-      // JSON をそのまま読んだときに分かりやすいよう、ID は先頭に置く
-      const agent: Agent = { id: randomUUID(), ...fields };
-      return {
-        next: [...current, agent],
-        result: { ok: true, value: agent },
-      };
+  updateUserAgents<AgentMutation<Agent>>((current, defaults) => {
+    if (hasSameName([...defaults, ...current], fields.name)) {
+      return { next: current, result: { ok: false, error: 'duplicateName' } };
     }
-  );
+    // JSON をそのまま読んだときに分かりやすいよう、ID は先頭に置く
+    const agent: Agent = { id: randomUUID(), ...fields };
+    return {
+      next: [...current, agent],
+      result: { ok: true, value: agent },
+    };
+  });
 
 /** エージェントの設定を書き換える（ID は変更しない） */
 export const updateAgent = async (
   id: string,
   patch: UpdateAgentRequest
-): Promise<AgentMutation<Agent>> => {
-  if (isDefaultAgentId(id)) {
-    return { ok: false, error: 'protected' };
-  }
-
-  return updateJsonFile<readonly StoredAgent[], AgentMutation<Agent>>(
-    FILE_NAME,
-    DEFAULT_AGENTS,
-    (stored) => {
-      const current = toAgents(stored);
-      if (!current.some((item) => item.id === id)) {
-        return { next: stored, result: { ok: false, error: 'notFound' } };
-      }
-      if (hasSameName(current, patch.name, id)) {
-        return { next: stored, result: { ok: false, error: 'duplicateName' } };
-      }
-      const updated: Agent = { id, ...patch };
-      return {
-        next: current.map((item) => (item.id === id ? updated : item)),
-        result: { ok: true, value: updated },
-      };
+): Promise<AgentMutation<Agent>> =>
+  updateUserAgents<AgentMutation<Agent>>((current, defaults) => {
+    if (defaults.some((agent) => agent.id === id)) {
+      return { next: current, result: { ok: false, error: 'protected' } };
     }
-  );
-};
+    if (!current.some((item) => item.id === id)) {
+      return { next: current, result: { ok: false, error: 'notFound' } };
+    }
+    if (hasSameName([...defaults, ...current], patch.name, id)) {
+      return { next: current, result: { ok: false, error: 'duplicateName' } };
+    }
+    const updated: Agent = { id, ...patch };
+    return {
+      next: current.map((item) => (item.id === id ? updated : item)),
+      result: { ok: true, value: updated },
+    };
+  });
 
 /** エージェントを削除する（送受信済みのメッセージは残る） */
-export const deleteAgent = async (id: string): Promise<AgentMutation<null>> => {
-  if (isDefaultAgentId(id)) {
-    return { ok: false, error: 'protected' };
-  }
-
-  return updateJsonFile<readonly StoredAgent[], AgentMutation<null>>(
-    FILE_NAME,
-    DEFAULT_AGENTS,
-    (stored) => {
-      const current = toAgents(stored);
-      if (!current.some((item) => item.id === id)) {
-        return { next: stored, result: { ok: false, error: 'notFound' } };
-      }
-      return {
-        next: current.filter((item) => item.id !== id),
-        result: { ok: true, value: null },
-      };
+export const deleteAgent = async (id: string): Promise<AgentMutation<null>> =>
+  updateUserAgents<AgentMutation<null>>((current, defaults) => {
+    if (defaults.some((agent) => agent.id === id)) {
+      return { next: current, result: { ok: false, error: 'protected' } };
     }
-  );
-};
+    if (!current.some((item) => item.id === id)) {
+      return { next: current, result: { ok: false, error: 'notFound' } };
+    }
+    return {
+      next: current.filter((item) => item.id !== id),
+      result: { ok: true, value: null },
+    };
+  });

@@ -1,14 +1,14 @@
 'use client';
 
-import type { Agent } from '@/types/mail';
+import type { ListedAgent } from '@/types/mail';
 import { useJsonResource } from './useJsonResource';
 
 interface AgentsResponse {
-  readonly agents: readonly Agent[];
+  readonly agents: readonly ListedAgent[];
 }
 
 export interface UseAgentsResult {
-  readonly agents: readonly Agent[];
+  readonly agents: readonly ListedAgent[];
   readonly loading: boolean;
   readonly error: string | null;
   /** 追加・変更・削除のあとに取り直す */

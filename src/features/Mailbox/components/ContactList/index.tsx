@@ -1,13 +1,12 @@
 'use client';
 
-import { isDefaultAgentId } from '@/lib/agents/defaultAgents';
-import type { Agent } from '@/types/mail';
+import type { ListedAgent } from '@/types/mail';
 import { Icon } from '../Icon';
 import { PermissionBadge } from '../PermissionBadge';
 import styles from './ContactList.module.css';
 
 interface ContactListProps {
-  readonly agents: readonly Agent[];
+  readonly agents: readonly ListedAgent[];
   readonly selectedAgentId: string | null;
   readonly query: string;
   readonly onChangeQuery: (query: string) => void;
@@ -15,7 +14,7 @@ interface ContactListProps {
   readonly onCreate: () => void;
 }
 
-const matches = (agent: Agent, query: string): boolean => {
+const matches = (agent: ListedAgent, query: string): boolean => {
   if (!query) {
     return true;
   }
@@ -69,7 +68,7 @@ export const ContactList = ({
             <div className={styles.topRow}>
               <span className={styles.name}>{agent.name}</span>
               <PermissionBadge agent={agent} />
-              {isDefaultAgentId(agent.id) && (
+              {agent.isDefault && (
                 <span className={styles.defaultTag}>既定</span>
               )}
             </div>

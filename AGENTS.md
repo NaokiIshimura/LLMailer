@@ -57,7 +57,7 @@ src/
 │  ├─ claudeCode/               # claude コマンドの実行とプロンプト組み立て
 │  ├─ transport/                # 「配信して返信を得る」抽象
 │  ├─ store/                    # JSON ファイル永続化（リポジトリ層）
-│  └─ thread.ts                 # Message[] → Thread[] の導出
+│  └─ thread.ts                 # スレッドファイル → Thread[] の導出
 └─ types/mail.ts                # 中心的な型（Agent / Message / Thread / Template）
 ```
 
@@ -65,9 +65,15 @@ src/
 
 変更するときに壊してはいけない前提。
 
-- **メッセージが唯一の真実の source**。スレッドは `Message[]` から導出する実体のない概念で、
-  導出できない情報（アーカイブ日時）だけを `data/threads/states.json` に置く。
+- **スレッドファイルがスレッドの実体**。`data/threads/<threadId>.json` に件名・アーカイブ日時と
+  メッセージをまとめて持ち、一覧に出す `Thread` はそこから導出する。
   アーカイブは真偽値ではなく日時で持ち、それより後のメッセージがあれば「やり取りが再開した」と見なす。
+- **件名はスレッドが 1 つだけ持つ**。メッセージ側は持たないので、後から変えると表示も、
+  次の配信でエージェントへ伝わる件名もまとめて変わる。
+- **`threadId` と `subject` は保存形に持たず、読み込み時にスレッド側から補う**
+  （1 ファイル = 1 スレッドなら全通で同じ値の繰り返しにしかならないため）。
+  下書きはスレッドに属さないので、この 2 つを自分で持つ。
+  ファイル内の `id` とファイル名が食い違ったら、**ファイル名を正**として警告だけ出す。
 - **メッセージは相手のエージェント（`agentIds`）だけを持つ**。自分が出したものかどうかは
   配信状態（`status`）から導出する。
 - **配信は `Transport` インターフェース越し**に呼ぶ。`lib/claudeCode` を UI や API から直接呼ばない
@@ -102,7 +108,7 @@ src/
 | DELETE | `/api/templates/[id]` | テンプレート削除（デフォルトのぶんは 403） |
 | GET | `/api/threads?folder=&q=` | スレッド一覧・下書き一覧・未読件数・対応中件数 |
 | GET | `/api/threads/[id]` | スレッド詳細 |
-| PATCH | `/api/threads/[id]` | スレッドを既読にする（`{ "archived": true }` でアーカイブ、`false` で解除） |
+| PATCH | `/api/threads/[id]` | スレッドを既読にする（`{ "subject": "…" }` で件名変更、`{ "archived": true }` でアーカイブ、`false` で解除） |
 | POST | `/api/messages` | 送信する（配信は待たず、宛先ごとの「対応中」を返す） |
 | POST | `/api/messages/drafts` | 下書き保存 |
 | DELETE | `/api/messages/[id]` | メッセージ（下書き）削除 |
@@ -154,6 +160,9 @@ src/
 ### 永続化（`lib/store/`）
 
 - 読み書きは `jsonFile.ts` のヘルパを通す（書き込みは直列化される）。
+- スレッドファイルの読み書きは `threadRecord.ts` の `readThreadRecord` / `updateThreadRecord` を通す。
+  保存形との差（`threadId` / `subject` の出し入れ、旧形式の読み替え）はこの 2 つに閉じている。
+  件名の変更と返信の保存が競合しないのも、同じファイルの更新が直列化されるため。
 - 同梱ファイル（`default.json`）は `readJsonFileIfExists` で読む。
   `readJsonFile` を使うと存在しないときに書き戻され、意図しない差分が出る。
 - スレッド ID は `[A-Za-z0-9_-]+` のみ。`drafts` / `states` / `index` は予約語で使えない（400）。
@@ -166,25 +175,29 @@ src/
 | `data/agents/custom.json` | 画面から追加したエージェント | 利用者ぶん。`.gitignore` 済み |
 | `data/templates/default.json` | 同梱のテンプレート | 同梱。コミット対象。画面からは変更・削除できない |
 | `data/templates/custom.json` | 画面から追加したテンプレート | 利用者ぶん。`.gitignore` 済み |
-| `data/threads/<threadId>.json` | スレッドごとの送受信メッセージ | 利用者の実データ。`.gitignore` 済み |
-| `data/threads/drafts.json` | 下書き | 利用者の実データ。`.gitignore` 済み |
-| `data/threads/states.json` | スレッドのアーカイブ日時 | 利用者の実データ。`.gitignore` 済み |
+| `data/threads/<threadId>.json` | スレッド 1 件（件名・アーカイブ日時・メッセージ） | 利用者の実データ。`.gitignore` 済み |
+| `data/threads/drafts.json` | 下書き（スレッドに属さないので配列のまま） | 利用者の実データ。`.gitignore` 済み |
 
 - **`data/threads/` 配下と `custom.json` を勝手に書き換えない**（利用者の実データ）。
 - 既定と利用者ぶんを分けているのは、個人のエージェント（作業ディレクトリに絶対パスが入る）を
   git の差分に出さないため。テンプレートも同じ理由で分けている。
 - 1 ファイル = 1 スレッドにしているのは、1 つの JSON にまとめると返信が 1 通増えるたびに
   それまでのやり取りをすべて書き直すことになるため。ファイル名がそのままスレッド ID になる。
+- スレッドファイルの形は `{ id, subject, archivedAt?, messages }`。
+  メッセージが 0 通になったらファイルごと消す（一覧に出ないものを件名だけ残して溜めない）。
 - 同梱ファイルを増やすときは、利用者ぶんと同じ形式にして `isDefault` で区別できるようにする。
   テンプレートの本文はそのままエージェントへの指示になるため、改行やインデントを落とさずに保存する。
-- 以前の名前で保存されたファイルは、初回の読み込みで下表のとおり引き継がれる。
-  処理は `lib/store/legacy.ts` にあるので、保存先の形を変えるときはここも見る。
+- 以前の名前・形式で保存されたファイルは、初回の読み込みで下表のとおり引き継がれる。
+  処理は `lib/store/migration.ts`（アドレスの読み替えは `legacy.ts`、
+  スレッドファイルの形の読み替えは `threadRecord.ts`）にあるので、保存先の形を変えるときはここも見る。
+  引き継ぎはすべて書き終えてから元ファイルを退避するので、途中で落ちてもやり直せる。
 
 | 以前のファイル | 引き継ぎ先 |
 | --- | --- |
 | `data/agents/user.json`、さらに前の `data/agents.json` | `data/agents/custom.json`（既定を除いたぶん） |
 | `data/messages.json` | `data/threads/<threadId>.json`（元は `data/messages.json.bak` へ退避） |
-| `data/threadStates.json` | `data/threads/states.json` |
+| `data/threads/states.json`、さらに前の `data/threadStates.json` | 各 `data/threads/<threadId>.json` の `archivedAt`（元は同じ場所の `.bak` へ退避） |
+| メッセージの配列だった `data/threads/<threadId>.json` | 同じファイル（読み込み時に読み替え、書き戻した時点で揃う） |
 
 ## 作業の進め方
 

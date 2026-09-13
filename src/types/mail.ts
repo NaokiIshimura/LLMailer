@@ -176,6 +176,10 @@ export interface RunInfo {
 
 export interface Message {
   readonly id: string;
+  /**
+   * 属するスレッド。
+   * 保存形には持たず、スレッドファイル側の値を読み込み時に補う（下書きだけは自分で持つ）。
+   */
   readonly threadId: string;
   /**
    * やり取りの相手となるエージェント。
@@ -183,6 +187,10 @@ export interface Message {
    * エージェント側のもの（対応中・受信・失敗）は差出人の 1 件が入る。
    */
   readonly agentIds: readonly string[];
+  /**
+   * 件名。スレッド内では全通が同じ値になるため、
+   * threadId と同じくスレッドファイル側から補う（下書きだけは自分で持つ）。
+   */
   readonly subject: string;
   readonly body: string;
   readonly status: MessageStatus;
@@ -209,12 +217,13 @@ export interface Message {
  * やり取りは常に「自分 ↔ エージェント」なので、配信状態から向きが決まる。
  * 利用者を表すアドレスを持たなくても、これで送信と受信を見分けられる。
  */
-export const isOutgoingMessage = (message: Message): boolean =>
+export const isOutgoingMessage = (message: Pick<Message, 'status'>): boolean =>
   message.status === 'draft' || message.status === 'sent';
 
-/** Message[] から導出するスレッド */
+/** スレッドファイルから導出するスレッド */
 export interface Thread {
   readonly id: string;
+  /** スレッドのお題。最初の送信の件名で決まり、後から変更できる */
   readonly subject: string;
   /** このスレッドに出てくるエージェントの ID */
   readonly participants: readonly string[];
@@ -312,15 +321,25 @@ export type UpdateAgentRequest = Omit<Agent, 'id'>;
 /**
  * PATCH /api/threads/[id] のリクエストボディ。
  *
- * スレッドは Message[] から導出されるまとまりで、作成も削除もしない。
- * 読んだ・片付けたという状態の更新だけを受け付ける。
+ * スレッドはメッセージを送ると生まれるもので、作成も削除もしない。
+ * 件名と、読んだ・片付けたという状態の更新だけを受け付ける。
  */
 export interface UpdateThreadRequest {
   /** true でスレッド内の未読をすべて既読にする（ボディを省略したときと同じ） */
   readonly read?: boolean;
   /** true でアーカイブ、false で解除 */
   readonly archived?: boolean;
+  /** スレッドのお題を変える（メッセージ単位では持たないため、表示はすべて変わる） */
+  readonly subject?: string;
 }
+
+/**
+ * スレッドの件名の長さの上限。
+ *
+ * 件名は一覧でも本文の見出しでも 1 行に収めて出すため、
+ * 長さを制限して扱える範囲に収める。
+ */
+export const THREAD_SUBJECT_MAX_LENGTH = 200;
 
 /** 下書き保存のリクエストボディ */
 export interface SaveDraftRequest {

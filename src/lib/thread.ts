@@ -1,6 +1,6 @@
+import type { ThreadRecord } from '@/lib/store/threadRecord';
 import {
   isOutgoingMessage,
-  NO_SUBJECT,
   type Folder,
   type Message,
   type Thread,
@@ -26,34 +26,12 @@ const collectParticipants = (messages: readonly Message[]): readonly string[] =>
   return [...agentIds];
 };
 
-/** スレッド単位にグループ化する（下書きはスレッドに含めない） */
-export const groupByThread = (
-  messages: readonly Message[]
-): ReadonlyMap<string, readonly Message[]> => {
-  const groups = new Map<string, Message[]>();
-  for (const message of messages) {
-    if (message.status === 'draft') {
-      continue;
-    }
-    const group = groups.get(message.threadId);
-    if (group) {
-      group.push(message);
-    } else {
-      groups.set(message.threadId, [message]);
-    }
-  }
-  return groups;
-};
-
-export const buildThread = (
-  threadId: string,
-  messages: readonly Message[],
-  archived = false
-): Thread => {
+export const buildThread = (record: ThreadRecord, archived = false): Thread => {
+  const { messages } = record;
   const latest = messages[messages.length - 1];
   return {
-    id: threadId,
-    subject: messages[0]?.subject || NO_SUBJECT,
+    id: record.id,
+    subject: record.subject,
     participants: collectParticipants(messages),
     lastMessageAt: latest?.createdAt ?? new Date(0).toISOString(),
     messageCount: messages.length,
@@ -65,30 +43,21 @@ export const buildThread = (
   };
 };
 
+/** アーカイブされたままか（アーカイブより後のメッセージがあれば再開したものと見なす） */
+const isArchived = ({ archivedAt, messages }: ThreadRecord): boolean =>
+  archivedAt !== undefined &&
+  messages.every((message) => message.createdAt <= archivedAt);
+
 /**
  * いまアーカイブされているスレッドの ID。
  *
- * アーカイブより後のメッセージがあるスレッドは、やり取りが再開したものとして含めない。
  * 送信・受信のどちらでも同じに扱うので、
  * 片付けたあとに返信が届いた場合も、こちらから返信した場合もメールボックスへ戻る。
  */
 export const collectArchivedThreadIds = (
-  messages: readonly Message[],
-  archivedAt: ReadonlyMap<string, string>
-): ReadonlySet<string> => {
-  const threadIds = new Set<string>();
-  if (archivedAt.size === 0) {
-    return threadIds;
-  }
-
-  for (const [threadId, threadMessages] of groupByThread(messages)) {
-    const at = archivedAt.get(threadId);
-    if (at && threadMessages.every((message) => message.createdAt <= at)) {
-      threadIds.add(threadId);
-    }
-  }
-  return threadIds;
-};
+  records: readonly ThreadRecord[]
+): ReadonlySet<string> =>
+  new Set(records.filter(isArchived).map((record) => record.id));
 
 /** スレッド一覧を出すフォルダか */
 const showsThreads = (folder: Folder): boolean => {
@@ -114,15 +83,19 @@ const showsThreads = (folder: Folder): boolean => {
   }
 };
 
-const matchesQuery = (query: string, messages: readonly Message[]): boolean => {
+/** 検索語に当てはまるか（件名は下書きなら自分のもの、スレッドならお題を見る） */
+const matchesQuery = (
+  query: string,
+  subject: string,
+  messages: readonly Message[]
+): boolean => {
   if (!query) {
     return true;
   }
   const keyword = query.toLowerCase();
-  return messages.some(
-    (message) =>
-      message.subject.toLowerCase().includes(keyword) ||
-      message.body.toLowerCase().includes(keyword)
+  return (
+    subject.toLowerCase().includes(keyword) ||
+    messages.some((message) => message.body.toLowerCase().includes(keyword))
   );
 };
 
@@ -142,7 +115,7 @@ const matchesAgents = (
 
 /** フォルダ・宛先・検索条件でスレッド一覧を導出する */
 export const buildThreads = (
-  messages: readonly Message[],
+  records: readonly ThreadRecord[],
   options: {
     readonly folder: Folder;
     readonly query?: string;
@@ -164,19 +137,19 @@ export const buildThreads = (
     return threads;
   }
 
-  for (const [threadId, threadMessages] of groupByThread(messages)) {
-    const archived = archivedThreadIds?.has(threadId) ?? false;
+  for (const record of records) {
+    const archived = archivedThreadIds?.has(record.id) ?? false;
     // アーカイブは片付けたものだけ、それ以外のフォルダは片付けていないものだけを出す
     if (archived !== (folder === 'archive')) {
       continue;
     }
     if (
-      !matchesQuery(query, threadMessages) ||
-      !matchesAgents(agentIds, threadMessages)
+      !matchesQuery(query, record.subject, record.messages) ||
+      !matchesAgents(agentIds, record.messages)
     ) {
       continue;
     }
-    threads.push(buildThread(threadId, threadMessages, archived));
+    threads.push(buildThread(record, archived));
   }
 
   return threads.sort(byLastMessageAtDesc);
@@ -189,7 +162,7 @@ export const buildDrafts = (
 ): readonly Message[] =>
   messages
     .filter((message) => message.status === 'draft')
-    .filter((message) => matchesQuery(query, [message]))
+    .filter((message) => matchesQuery(query, message.subject, [message]))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
 /**

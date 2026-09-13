@@ -1,50 +1,37 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { errorResponse, unexpectedErrorResponse } from '@/lib/api/response';
+import { parseThreadUpdate } from '@/lib/api/threadInput';
 import {
   failStalePendingMessages,
-  listThreadMessages,
   markThreadAsRead,
 } from '@/lib/store/messageRepository';
 import {
-  listArchivedAt,
+  readThread,
   setThreadArchived,
-} from '@/lib/store/threadStateRepository';
+  setThreadSubject,
+} from '@/lib/store/threadRepository';
+import type { ThreadRecord } from '@/lib/store/threadRecord';
 import { buildThread, collectArchivedThreadIds } from '@/lib/thread';
-import type { Message, Thread, UpdateThreadRequest } from '@/types/mail';
+import {
+  THREAD_SUBJECT_MAX_LENGTH,
+  type Thread,
+  type UpdateThreadRequest,
+} from '@/types/mail';
 
 interface RouteContext {
   readonly params: Promise<{ readonly id: string }>;
 }
 
-/** スレッド本文として返すメッセージ（下書きはスレッドに含めない） */
-const readThreadMessages = async (
-  id: string
-): Promise<readonly Message[]> =>
-  (await listThreadMessages(id)).filter(
-    (message) => message.status !== 'draft'
-  );
-
 /** 保存済みのアーカイブ状態を反映してスレッドを組み立てる */
-const buildStoredThread = async (
-  id: string,
-  messages: readonly Message[]
-): Promise<Thread> => {
-  const archivedThreadIds = collectArchivedThreadIds(
-    messages,
-    await listArchivedAt()
-  );
-  return buildThread(id, messages, archivedThreadIds.has(id));
-};
+const toThread = (record: ThreadRecord): Thread =>
+  buildThread(record, collectArchivedThreadIds([record]).has(record.id));
 
 /** ボディ無しの PATCH（既読化）も受け付けるため、読めなければ空として扱う */
 const parseUpdate = async (
   request: NextRequest
-): Promise<UpdateThreadRequest> => {
+): Promise<UpdateThreadRequest | null> => {
   try {
-    const body: unknown = await request.json();
-    return typeof body === 'object' && body !== null
-      ? (body as UpdateThreadRequest)
-      : {};
+    return parseThreadUpdate(await request.json());
   } catch {
     return {};
   }
@@ -58,15 +45,15 @@ export const GET = async (
     const { id } = await context.params;
     // 前のプロセスが残した対応中は返信が届かないため、読み出す前に失敗へ倒す
     await failStalePendingMessages();
-    const messages = await readThreadMessages(id);
+    const record = await readThread(id);
 
-    if (messages.length === 0) {
+    if (record.messages.length === 0) {
       return errorResponse('スレッドが見つかりません。', 404);
     }
 
     return NextResponse.json({
-      thread: await buildStoredThread(id, messages),
-      messages,
+      thread: toThread(record),
+      messages: record.messages,
     });
   } catch (error) {
     return unexpectedErrorResponse('GET /api/threads/[id]', error);
@@ -74,10 +61,10 @@ export const GET = async (
 };
 
 /**
- * スレッドの状態を更新する。
+ * スレッドを更新する。
  *
- * `{ archived }` を指定するとアーカイブの切り替え、
- * それ以外（ボディ無しや `{ read: true }`）は既読化として扱う。
+ * `{ subject }` でお題の変更、`{ archived }` でアーカイブの切り替え。
+ * どちらも指定が無ければ（ボディ無しや `{ read: true }`）既読化として扱う。
  */
 export const PATCH = async (
   request: NextRequest,
@@ -85,23 +72,34 @@ export const PATCH = async (
 ): Promise<NextResponse> => {
   try {
     const { id } = await context.params;
-    const { archived } = await parseUpdate(request);
+    const update = await parseUpdate(request);
+    if (!update) {
+      return errorResponse(
+        `スレッドの件名は 1 文字以上 ${THREAD_SUBJECT_MAX_LENGTH} 文字以内で入力してください。`,
+        400
+      );
+    }
 
     // 無いスレッドの状態を書き込まないよう、先に見つかるかどうかを確かめる
-    if ((await readThreadMessages(id)).length === 0) {
+    if ((await readThread(id)).messages.length === 0) {
       return errorResponse('スレッドが見つかりません。', 404);
     }
 
-    let updatedCount = 0;
-    if (typeof archived === 'boolean') {
-      await setThreadArchived(id, archived);
-    } else {
-      updatedCount = await markThreadAsRead(id);
+    const { subject, archived } = update;
+    if (subject !== undefined) {
+      await setThreadSubject(id, subject);
     }
+    if (archived !== undefined) {
+      await setThreadArchived(id, archived);
+    }
+    // 件名やアーカイブの操作は読んだことにならないので、指定が無いときだけ既読にする
+    const updatedCount =
+      subject === undefined && archived === undefined
+        ? await markThreadAsRead(id)
+        : 0;
 
-    const messages = await readThreadMessages(id);
     return NextResponse.json({
-      thread: await buildStoredThread(id, messages),
+      thread: toThread(await readThread(id)),
       updatedCount,
     });
   } catch (error) {

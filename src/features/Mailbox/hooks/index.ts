@@ -44,6 +44,10 @@ export {
   useNotificationSound,
   type UseNotificationSoundResult,
 } from './useNotificationSound';
+export {
+  useRenameThread,
+  type UseRenameThreadResult,
+} from './useRenameThread';
 export { useReplyChime } from './useReplyChime';
 export { useSendMessage, type UseSendMessageResult } from './useSendMessage';
 export {

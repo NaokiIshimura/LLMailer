@@ -16,6 +16,8 @@ interface FolderSidebarProps {
   readonly selectedAgentId: string | null;
   readonly agents: readonly Agent[];
   readonly unreadCount: number;
+  /** 対応中（応答待ち）の件数 */
+  readonly pendingCount: number;
   readonly draftCount: number;
   readonly agentUnreadCounts: Readonly<Record<string, number>>;
   readonly onSelectFolder: (folder: Folder) => void;
@@ -33,6 +35,7 @@ export const FolderSidebar = ({
   selectedAgentId,
   agents,
   unreadCount,
+  pendingCount,
   draftCount,
   agentUnreadCounts,
   onSelectFolder,
@@ -69,9 +72,20 @@ export const FolderSidebar = ({
             onClick={() => onSelectFolder(item)}
             aria-current={selected(item)}
           >
-            <span>{FOLDER_LABELS[item]}</span>
-            {item === 'mailbox' && unreadCount > 0 && (
-              <span className={styles.badge}>{unreadCount}</span>
+            <span className={styles.label}>{FOLDER_LABELS[item]}</span>
+            {/* 対応中は一覧を開かなくても分かるよう、メールボックスにも出す */}
+            {item === 'mailbox' && (pendingCount > 0 || unreadCount > 0) && (
+              <span className={styles.trailing}>
+                {pendingCount > 0 && (
+                  <span className={styles.pendingTag}>
+                    <span className={styles.pendingPulse} aria-hidden="true" />
+                    対応中
+                  </span>
+                )}
+                {unreadCount > 0 && (
+                  <span className={styles.badge}>{unreadCount}</span>
+                )}
+              </span>
             )}
             {item === 'drafts' && draftCount > 0 && (
               <span className={styles.countBadge}>{draftCount}</span>
@@ -110,7 +124,7 @@ export const FolderSidebar = ({
           onClick={() => onSelectFolder(item)}
           aria-current={selected(item)}
         >
-          <span>{FOLDER_LABELS[item]}</span>
+          <span className={styles.label}>{FOLDER_LABELS[item]}</span>
           {item === 'contacts' && agents.length > 0 && (
             <span className={styles.countBadge}>{agents.length}</span>
           )}

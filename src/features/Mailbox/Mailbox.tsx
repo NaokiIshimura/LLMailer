@@ -411,6 +411,7 @@ export const Mailbox = () => {
           selectedAgentId={threads.agentId}
           agents={agents.agents}
           unreadCount={threads.unreadCount}
+          pendingCount={pendingCount}
           draftCount={threads.draftCount}
           agentUnreadCounts={threads.agentUnreadCounts}
           onSelectFolder={threads.selectFolder}

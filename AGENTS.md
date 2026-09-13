@@ -31,7 +31,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ## コマンド
 
 ```bash
-npm run dev     # 開発サーバー（http://localhost:3000）
+npm run dev     # 開発サーバー（http://localhost:25110）
 npm run lint    # ESLint
 npm run build   # 型チェック込みのビルド
 ```

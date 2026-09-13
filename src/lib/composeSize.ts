@@ -14,8 +14,8 @@ export interface ComposeSize {
 /** 選んだ大きさの保存先 */
 export const COMPOSE_SIZE_STORAGE_KEY = 'llmailer.composeSize';
 
-/** これまでと同じ見た目になる既定サイズ */
-export const DEFAULT_COMPOSE_SIZE: ComposeSize = { width: 560, height: 640 };
+/** 初めて開いたときの大きさ。指示は横に長くなりがちなので、幅はやや広めにとる */
+export const DEFAULT_COMPOSE_SIZE: ComposeSize = { width: 720, height: 640 };
 
 /** 宛先・件名・本文がそれぞれ読める下限 */
 export const MIN_COMPOSE_SIZE: ComposeSize = { width: 360, height: 320 };

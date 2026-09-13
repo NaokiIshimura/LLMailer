@@ -34,6 +34,8 @@
   border-radius: var(--radius);
   box-shadow: var(--shadow-window);
   overflow-y: auto;
+  /* すぐ選べるよう、ウィンドウより短い時間で開く */
+  animation: popIn var(--duration-fast) var(--easing-decelerate);
 }
 
 .item {
@@ -70,4 +72,12 @@
   padding: 10px;
   color: var(--color-text-muted);
   font-size: 12px;
+}
+
+/* 一覧は少し下から浮かび上がらせる */
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
 }

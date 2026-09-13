@@ -13,6 +13,8 @@
   box-shadow: var(--shadow-window);
   overflow: hidden;
   z-index: 40;
+  /* 右下から浮かび上がらせる。大きさは inline style で決まるため、位置と濃さだけを動かす */
+  animation: popIn var(--duration-slow) var(--easing-decelerate);
 }
 
 /* 最大化中は左上のつまみではなく画面いっぱいに合わせる */
@@ -24,6 +26,8 @@
 /* ドラッグ中に本文や見出しが選択されてしまわないようにする */
 .resizing {
   user-select: none;
+  /* つまみに遅れて付いてくるのを防ぐため、ドラッグ中は動きを付けない */
+  transition: none;
 }
 
 .resizeHandle {
@@ -70,6 +74,7 @@
   border-left: 2px solid var(--color-text-muted);
   border-radius: 2px 0 0 0;
   opacity: 0.5;
+  transition: opacity var(--duration-fast) var(--easing-standard);
 }
 
 .resizeCorner:hover::after {
@@ -232,4 +237,12 @@
 .templateRow {
   display: flex;
   padding: 6px 12px 10px;
+}
+
+/* ウィンドウは少し下から浮かび上がらせる */
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
 }

@@ -117,102 +117,10 @@ npm run dev
 
 deny（`disallowedTools`）は allow より優先される。既定の読み取り専用エージェントはこの形で定義済み。
 
-## 構成
-
-```
-src/
-├─ app/
-│  ├─ page.tsx                  # Mailbox を配置するのみ
-│  └─ api/                      # Route Handlers
-├─ features/Mailbox/
-│  ├─ Mailbox.tsx               # 3 ペインの組み立て
-│  ├─ hooks/                    # 取得・送信・作成のロジック
-│  └─ components/               # 表示のみ（状態を持たない）
-├─ lib/
-│  ├─ claudeCode/               # claude コマンドの実行とプロンプト組み立て
-│  ├─ transport/                # 「配信して返信を得る」抽象
-│  ├─ store/                    # JSON ファイル永続化
-│  └─ thread.ts                 # Message[] → Thread[] の導出
-└─ types/mail.ts                # 中心的な型
-```
-
-- メッセージが唯一の真実の source で、スレッドは `Message[]` から導出する
-- 配信は `Transport` インターフェース越しに呼ぶため、実メール（SMTP/IMAP）実装へ差し替えられる
-- 会話履歴は Claude Code のセッションが保持し、LLMailer は「前回の応答以降に増えた分」だけを渡す
-- `claude` は `spawn`（`shell: false`）で起動し、プロンプトは標準入力から渡す
-  （`--allowedTools` などの可変長オプションが後続の引数を飲み込むため）
-- 親プロセスが Claude Code の場合に継承される `CLAUDE*` 環境変数は、子プロセスへ渡す前に落とす
-- 新規送信でもスレッド ID をクライアントで決めるため、応答を待たずにそのスレッドを開ける
-- `POST /api/messages` は送信と「対応中」のプレースホルダを保存した時点で応答し、配信は
-  `after()` で応答後に続ける。返信が届くとプレースホルダを**同じ ID で上書き**する
-  （状態がブラウザのメモリに無いため、リロードしても「対応中」が消えない）
-- 対応中のプレースホルダには配信を担当するプロセス ID を持たせ、別プロセスのものが残っていたら
-  読み出し時に「配信失敗」へ倒す（サーバーを止めると返信はもう届かないため）
-
-### API
-
-| メソッド | パス | 用途 |
-| --- | --- | --- |
-| GET | `/api/agents` | エージェント一覧 |
-| POST | `/api/agents` | エージェント追加（ID はサーバーが採番） |
-| PUT | `/api/agents/[id]` | エージェント変更 |
-| DELETE | `/api/agents/[id]` | エージェント削除 |
-| GET | `/api/templates` | テンプレート一覧 |
-| POST | `/api/templates` | テンプレート追加（ID はサーバーが採番） |
-| PUT | `/api/templates/[id]` | テンプレート変更（デフォルトのぶんは 403） |
-| DELETE | `/api/templates/[id]` | テンプレート削除（デフォルトのぶんは 403） |
-| GET | `/api/threads?folder=&q=` | スレッド一覧・下書き一覧・未読件数・対応中件数 |
-| GET | `/api/threads/[id]` | スレッド詳細 |
-| PATCH | `/api/threads/[id]` | スレッドを既読にする（`{ "archived": true }` でアーカイブ、`false` で解除） |
-| POST | `/api/messages` | 送信する（配信は待たず、宛先ごとの「対応中」を返す） |
-| POST | `/api/messages/drafts` | 下書き保存 |
-| DELETE | `/api/messages/[id]` | メッセージ（下書き）削除 |
-
-## データ
-
-- `data/agents/default.json` — 既定のエージェント（コミット対象。画面からは変更・削除できない）
-- `data/agents/custom.json` — 画面から追加したエージェント（`.gitignore` 済み）
-- `data/templates/default.json` — 同梱のテンプレート（コミット対象。画面からは変更・削除できない）
-- `data/templates/custom.json` — 画面から追加したテンプレート（`.gitignore` 済み）
-- `data/threads/<threadId>.json` — スレッドごとの送受信メッセージ（`.gitignore` 済み）
-- `data/threads/drafts.json` — 下書き（`.gitignore` 済み）
-- `data/threads/states.json` — スレッドのアーカイブ日時（`.gitignore` 済み）
-
-既定と利用者ぶんを分けているのは、個人のエージェント（作業ディレクトリに絶対パスが入る）を
-git の差分に出さないため。以前の名前で保存されたファイル
-（`data/agents/user.json`、さらに 1 ファイルだった頃の `data/agents.json`）が残っている場合は、
-既定を除いたぶんが `data/agents/custom.json` へ自動で引き継がれる（引き継ぎ後は削除してよい）。
-
-テンプレートも同じ理由でデフォルトと利用者ぶんを分けている。
-同梱するのは「調査をする」「実行計画を作成する」「PR を作成する」の 3 つで、
-本文はそのままエージェントへの指示になるため、改行やインデントを落とさずに保存する。
-
-メッセージをスレッドごとのファイルに分けているのは、1 つの JSON にまとめていると
-返信が 1 通増えるたびにそれまでのやり取りをすべて書き直すことになるため。
-1 ファイルだった頃の `data/messages.json` が残っている場合は、初回の読み込みで
-スレッドごとに分割され、旧ファイルは `data/messages.json.bak` へ退避される
-（引き継ぎ後は削除してよい）。`data/threadStates.json` も同じように
-`data/threads/states.json` へ引き継がれる。
-
-`data/threads/` 配下は 1 ファイル = 1 スレッドなので、スレッド ID がそのままファイル名になる。
-同居する `drafts.json` / `states.json` を上書きされないよう、`drafts` / `states` / `index` は
-スレッド ID として使えない（指定すると 400 になる）。
-
-メッセージは相手のエージェント（`agentIds`）だけを持ち、自分が出したものかどうかは
-配信状態（`status`）から導出する。アドレスで宛先を書いていた頃のデータは読み込み時に変換される。
-
-スレッドは保存されたメッセージから導出されるまとまりで実体を持たないため、
-アーカイブの状態だけはスレッド ID をキーにした `data/threads/states.json` に分けて置く。
-真偽値ではなく日時を持ち、それより後のメッセージがあれば「やり取りが再開した」と見なす。
-
 ## 開発
 
-```bash
-npm run lint    # ESLint
-npm run build   # 型チェック込みのビルド
-```
-
-`next dev` は同一ディレクトリで 2 つ同時に起動できない点に注意。
+API 一覧・データの置き場所・内部の構成・設計の前提・コーディング規約・確認コマンドは
+[AGENTS.md](AGENTS.md) にまとめている。
 
 ## 今後の拡張
 
@@ -220,6 +128,6 @@ npm run build   # 型チェック込みのビルド
 | --- | --- |
 | ストリーミング受信 | `--output-format stream-json` と `Transport.deliverStream()` を追加し SSE 化 |
 | コードのシンタックスハイライト | `MarkdownBody` の `code` コンポーネントを差し替える |
-| エージェント CRUD | アドレス帳の詳細画面に編集フォームを足す（現在は `data/agents/custom.json` を直接編集） |
+| エージェントの詳細項目の編集 | 許可ツール・無効化ツール・設定ソースを編集フォームに足す（現在は `data/agents/custom.json` を直接編集） |
 | 実メール連携 | `Transport` を満たす `MailTransport`（SMTP/IMAP）を追加 |
 | SQLite 移行 | `lib/store` のリポジトリ実装を差し替え |

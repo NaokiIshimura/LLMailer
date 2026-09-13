@@ -60,6 +60,12 @@ export const ComposeWindow = ({
     canSend
   );
 
+  /*
+    テンプレートは白紙から書き始めるときの下敷き。
+    書き始めたあとに差し込む場面はないため、本文の邪魔にならないよう引っ込める。
+  */
+  const showTemplates = draft.body.trim().length === 0;
+
   /** テンプレートは本文のカーソル位置へ差し込む（選択範囲があれば置き換える） */
   const handleSelectTemplate = (template: ListedTemplate): void => {
     const textarea = bodyRef.current;
@@ -203,12 +209,14 @@ export const ComposeWindow = ({
           onKeyDown={handleBodyKeyDown}
         />
 
-        <div className={styles.templateRow}>
-          <TemplatePicker
-            templates={templates}
-            onSelect={handleSelectTemplate}
-          />
-        </div>
+        {showTemplates && (
+          <div className={styles.templateRow}>
+            <TemplatePicker
+              templates={templates}
+              onSelect={handleSelectTemplate}
+            />
+          </div>
+        )}
       </div>
 
       <footer className={styles.footer}>

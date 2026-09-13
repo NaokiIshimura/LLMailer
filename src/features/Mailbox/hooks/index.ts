@@ -33,6 +33,10 @@ export {
 } from './useGroupDefaultAgents';
 export { useJsonResource, type JsonResource } from './useJsonResource';
 export {
+  useMarkReadOnInteraction,
+  type UseMarkReadOnInteractionResult,
+} from './useMarkReadOnInteraction';
+export {
   useNotificationSound,
   type UseNotificationSoundResult,
 } from './useNotificationSound';

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { after, NextResponse, type NextRequest } from 'next/server';
 import { errorResponse, unexpectedErrorResponse } from '@/lib/api/response';
 import { listAgents } from '@/lib/store/agentRepository';
+import { isSafeThreadId } from '@/lib/store/threadFiles';
 import {
   DELIVERY_PROCESS_ID,
   deleteMessage,
@@ -143,6 +144,10 @@ export const POST = async (request: NextRequest): Promise<NextResponse> => {
     }
     if (payload.agentIds.length === 0) {
       return errorResponse('宛先を 1 件以上指定してください。', 400);
+    }
+    // スレッド ID はそのまま保存先のファイル名になるため、扱えない値は受け付けない
+    if (payload.threadId && !isSafeThreadId(payload.threadId)) {
+      return errorResponse('スレッドの指定が正しくありません。', 400);
     }
 
     const agents = await listAgents();

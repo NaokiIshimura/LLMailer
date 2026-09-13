@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { NextResponse, type NextRequest } from 'next/server';
 import { errorResponse, unexpectedErrorResponse } from '@/lib/api/response';
 import { saveMessage } from '@/lib/store/messageRepository';
+import { isSafeThreadId } from '@/lib/store/threadFiles';
 import {
   NO_SUBJECT,
   type Message,
@@ -26,6 +27,11 @@ export const POST = async (request: NextRequest): Promise<NextResponse> => {
     const payload: unknown = await request.json();
     if (!isSaveDraftRequest(payload)) {
       return errorResponse('リクエストの形式が正しくありません。', 400);
+    }
+
+    // 下書きから送信するとスレッド ID が保存先のファイル名になるため、ここで弾く
+    if (payload.threadId && !isSafeThreadId(payload.threadId)) {
+      return errorResponse('スレッドの指定が正しくありません。', 400);
     }
 
     const draft: Message = {

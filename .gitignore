@@ -41,8 +41,11 @@ yarn-error.log*
 next-env.d.ts
 
 # LLMailer
-/data/messages.json
-/data/threadStates.json
+/data/threads/
 /data/agents/user.json
+# 1 ファイルにまとめていた頃のもの（初回に data/threads/ へ引き継ぐ）
+/data/messages.json
+/data/messages.json.bak
+/data/threadStates.json
 .env.local
 .claude/

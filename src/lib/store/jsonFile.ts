@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -60,6 +60,40 @@ export const readJsonFile = async <T>(
   }
 };
 
+/**
+ * ディレクトリ内の JSON ファイル名を列挙する。
+ *
+ * ディレクトリがまだ無い場合は空として扱う（1 件も保存していない状態）。
+ */
+export const listJsonFileNames = async (
+  dirName: string
+): Promise<readonly string[]> => {
+  try {
+    const entries = await readdir(filePath(dirName));
+    return entries.filter((entry) => entry.endsWith('.json'));
+  } catch (error) {
+    if (isNotFound(error)) {
+      return [];
+    }
+    throw error;
+  }
+};
+
+/** JSON ファイルを別の名前へ移す（元が無ければ何もしない） */
+export const renameJsonFile = async (
+  from: string,
+  to: string
+): Promise<void> => {
+  try {
+    await ensureDirectory(to);
+    await rename(filePath(from), filePath(to));
+  } catch (error) {
+    if (!isNotFound(error)) {
+      throw error;
+    }
+  }
+};
+
 /** JSON ファイルへ書き込む（同一ファイルへの書き込みは直列化される） */
 export const writeJsonFile = async <T>(
   fileName: string,
@@ -90,11 +124,15 @@ export const writeJsonFile = async <T>(
 /**
  * 読み込み → 更新 → 書き込みを直列化して行う。
  * 同時リクエストによる更新の取りこぼしを防ぐ。
+ *
+ * updater が next に null を返した場合はファイルごと削除する。
+ * 分割して保存していると中身が空のファイルが残りやすいため、
+ * 書き込みと同じ直列化の中で片付けられるようにしている。
  */
 export const updateJsonFile = async <T, R>(
   fileName: string,
   defaultValue: T,
-  updater: (current: T) => { readonly next: T; readonly result: R }
+  updater: (current: T) => { readonly next: T | null; readonly result: R }
 ): Promise<R> => {
   const previous = writeQueues.get(fileName) ?? Promise.resolve();
   const task = previous
@@ -112,6 +150,11 @@ export const updateJsonFile = async <T, R>(
       }
 
       const { next, result } = updater(current);
+      if (next === null) {
+        await rm(filePath(fileName), { force: true });
+        return result;
+      }
+
       await ensureDirectory(fileName);
       await writeFile(
         filePath(fileName),

@@ -1,6 +1,8 @@
 import { readJsonFileIfExists, updateJsonFile } from './jsonFile';
+import { STATES_FILE } from './threadFiles';
 
-const FILE_NAME = 'threadStates.json';
+/** スレッドに関わるものを data/threads/ へ集める前のファイル（読み込み時に引き継ぐ） */
+const LEGACY_FILE = 'threadStates.json';
 
 /**
  * スレッドに付ける状態。
@@ -17,6 +19,27 @@ export interface ThreadState {
 const DEFAULT_STATES: readonly ThreadState[] = [];
 
 /**
+ * 保存済みの状態を読む。
+ *
+ * 一度もアーカイブしていないうちからファイルは作らない。
+ * 新しい場所にまだ無ければ、data 直下に置いていた頃のファイルから引き継ぐ。
+ * （引き継いだ内容は、次のアーカイブ操作で新しい場所へ書き出される）
+ */
+const readStates = async (): Promise<readonly ThreadState[]> => {
+  const states = await readJsonFileIfExists<readonly ThreadState[] | null>(
+    STATES_FILE,
+    null
+  );
+  return (
+    states ??
+    (await readJsonFileIfExists<readonly ThreadState[]>(
+      LEGACY_FILE,
+      DEFAULT_STATES
+    ))
+  );
+};
+
+/**
  * スレッドごとのアーカイブ日時。
  *
  * 真偽値ではなく日時を持つのは、アーカイブしたあとに届いた返信を
@@ -25,11 +48,7 @@ const DEFAULT_STATES: readonly ThreadState[] = [];
 export const listArchivedAt = async (): Promise<
   ReadonlyMap<string, string>
 > => {
-  // 一度もアーカイブしていないうちからファイルを作らない
-  const states = await readJsonFileIfExists<readonly ThreadState[]>(
-    FILE_NAME,
-    DEFAULT_STATES
-  );
+  const states = await readStates();
   return new Map(states.map((state) => [state.threadId, state.archivedAt]));
 };
 
@@ -42,10 +61,12 @@ export const listArchivedAt = async (): Promise<
 export const setThreadArchived = async (
   threadId: string,
   archived: boolean
-): Promise<boolean> =>
-  updateJsonFile<readonly ThreadState[], boolean>(
-    FILE_NAME,
-    DEFAULT_STATES,
+): Promise<boolean> => {
+  // 新しい場所にまだ無いときは、旧ファイルから引き継いだ内容を初期値にする
+  const fallback = await readStates();
+  return updateJsonFile<readonly ThreadState[], boolean>(
+    STATES_FILE,
+    fallback,
     (current) => {
       const rest = current.filter((state) => state.threadId !== threadId);
       const changed = archived || rest.length !== current.length;
@@ -57,3 +78,4 @@ export const setThreadArchived = async (
       };
     }
   );
+};

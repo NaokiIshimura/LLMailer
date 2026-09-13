@@ -174,7 +174,7 @@ export const ContactView = ({
         <p className={styles.hint}>
           {isDefault
             ? 'デフォルトのエージェントのため、画面からは変更・削除できません。'
-            : '編集で変えられない項目（許可ツールなど）は data/agents/user.json で調整できます。'}
+            : '編集で変えられない項目（許可ツールなど）は data/agents/custom.json で調整できます。'}
         </p>
       </div>
     </section>

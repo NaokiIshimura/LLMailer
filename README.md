@@ -82,7 +82,7 @@ npm run dev
 
 定義は `data/agents/` 配下の 2 ファイルに分かれている。
 既定は `data/agents/default.json`（コミット対象・読み取りのみ）、
-画面から追加したぶんは `data/agents/user.json`（`.gitignore` 済み）に入る。
+画面から追加したぶんは `data/agents/custom.json`（`.gitignore` 済み）に入る。
 
 ```jsonc
 {
@@ -165,14 +165,15 @@ src/
 ## データ
 
 - `data/agents/default.json` — 既定のエージェント（コミット対象。画面からは変更・削除できない）
-- `data/agents/user.json` — 画面から追加したエージェント（`.gitignore` 済み）
+- `data/agents/custom.json` — 画面から追加したエージェント（`.gitignore` 済み）
 - `data/threads/<threadId>.json` — スレッドごとの送受信メッセージ（`.gitignore` 済み）
 - `data/threads/drafts.json` — 下書き（`.gitignore` 済み）
 - `data/threads/states.json` — スレッドのアーカイブ日時（`.gitignore` 済み）
 
 既定と利用者ぶんを分けているのは、個人のエージェント（作業ディレクトリに絶対パスが入る）を
-git の差分に出さないため。1 ファイルだった頃の `data/agents.json` が残っている場合は、
-既定を除いたぶんが `data/agents/user.json` へ自動で引き継がれる（引き継ぎ後は削除してよい）。
+git の差分に出さないため。以前の名前で保存されたファイル
+（`data/agents/user.json`、さらに 1 ファイルだった頃の `data/agents.json`）が残っている場合は、
+既定を除いたぶんが `data/agents/custom.json` へ自動で引き継がれる（引き継ぎ後は削除してよい）。
 
 メッセージをスレッドごとのファイルに分けているのは、1 つの JSON にまとめていると
 返信が 1 通増えるたびにそれまでのやり取りをすべて書き直すことになるため。
@@ -207,6 +208,6 @@ npm run build   # 型チェック込みのビルド
 | --- | --- |
 | ストリーミング受信 | `--output-format stream-json` と `Transport.deliverStream()` を追加し SSE 化 |
 | コードのシンタックスハイライト | `MarkdownBody` の `code` コンポーネントを差し替える |
-| エージェント CRUD | アドレス帳の詳細画面に編集フォームを足す（現在は `data/agents/user.json` を直接編集） |
+| エージェント CRUD | アドレス帳の詳細画面に編集フォームを足す（現在は `data/agents/custom.json` を直接編集） |
 | 実メール連携 | `Transport` を満たす `MailTransport`（SMTP/IMAP）を追加 |
 | SQLite 移行 | `lib/store` のリポジトリ実装を差し替え |

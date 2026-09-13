@@ -15,10 +15,16 @@ import { readJsonFileIfExists, updateJsonFile } from './jsonFile';
 const DEFAULT_FILE = 'agents/default.json';
 
 /** 画面から追加したエージェント。CRUD の対象で、git には含めない */
-const USER_FILE = 'agents/user.json';
+const CUSTOM_FILE = 'agents/custom.json';
 
-/** デフォルトと利用者ぶんが 1 つになっていた頃のファイル（読み込み時に引き継ぐ） */
-const LEGACY_FILE = 'agents.json';
+/**
+ * custom.json より前の名前で保存されていたファイル（新しい順）。
+ *
+ * 'agents/user.json' は「利用者の情報」と読めてしまうため custom.json へ改めた。
+ * 'agents.json' はデフォルトと利用者ぶんが 1 つになっていた頃のもの。
+ * どちらも読み込み時に引き継ぐだけで、書き込みには使わない。
+ */
+const LEGACY_FILES: readonly string[] = ['agents/user.json', 'agents.json'];
 
 /**
  * 追加・変更・削除が行えなかった理由。
@@ -53,42 +59,56 @@ const toAgents = (stored: readonly StoredAgent[]): readonly Agent[] =>
 const readAgentFile = async (fileName: string): Promise<readonly Agent[]> =>
   toAgents(await readJsonFileIfExists<readonly StoredAgent[]>(fileName, []));
 
+/** 以前の名前で保存されていたエージェントを、新しい名前のものから順に探す */
+const readLegacyAgents = async (): Promise<readonly Agent[]> => {
+  for (const fileName of LEGACY_FILES) {
+    const stored = await readJsonFileIfExists<readonly StoredAgent[] | null>(
+      fileName,
+      null
+    );
+    if (stored) {
+      return toAgents(stored);
+    }
+  }
+  return [];
+};
+
 /**
  * 利用者が追加したエージェントを読む。
  *
- * user.json がまだ無ければ、1 ファイルだった頃の data/agents.json から引き継ぐ。
+ * custom.json がまだ無ければ、以前の名前のファイルから引き継ぐ。
  * デフォルトのぶんは default.json 側が持つので、ここでは常に取り除く。
- * （引き継いだ内容は、次の追加・変更・削除で user.json として書き出される）
+ * （引き継いだ内容は、次の追加・変更・削除で custom.json として書き出される）
  */
-const readUserAgents = async (
+const readCustomAgents = async (
   defaults: readonly Agent[]
 ): Promise<readonly Agent[]> => {
   const stored = await readJsonFileIfExists<readonly StoredAgent[] | null>(
-    USER_FILE,
+    CUSTOM_FILE,
     null
   );
-  const agents = stored ? toAgents(stored) : await readAgentFile(LEGACY_FILE);
+  const agents = stored ? toAgents(stored) : await readLegacyAgents();
   const defaultIds = new Set(defaults.map((agent) => agent.id));
   return agents.filter((agent) => !defaultIds.has(agent.id));
 };
 
 /**
- * user.json を読み込み → 更新 → 書き込みする。
+ * custom.json を読み込み → 更新 → 書き込みする。
  *
  * デフォルトは別ファイルなので、ここで書き換えるのは利用者ぶんだけ。
  * 同名の判定などに要るため、デフォルトの一覧も updater へ渡す。
  */
-const updateUserAgents = async <R>(
+const updateCustomAgents = async <R>(
   updater: (
     current: readonly Agent[],
     defaults: readonly Agent[]
   ) => { readonly next: readonly Agent[]; readonly result: R }
 ): Promise<R> => {
   const defaults = await readAgentFile(DEFAULT_FILE);
-  // user.json がまだ無いときは、旧ファイルから引き継いだ内容を初期値にする
-  const fallback = await readUserAgents(defaults);
+  // custom.json がまだ無いときは、以前の名前のファイルから引き継いだ内容を初期値にする
+  const fallback = await readCustomAgents(defaults);
   return updateJsonFile<readonly StoredAgent[], R>(
-    USER_FILE,
+    CUSTOM_FILE,
     fallback,
     (stored) => updater(toAgents(stored), defaults)
   );
@@ -110,10 +130,10 @@ const hasSameName = (
 /** デフォルトを先、利用者が追加したぶんを後に並べる */
 export const listAgents = async (): Promise<readonly ListedAgent[]> => {
   const defaults = await readAgentFile(DEFAULT_FILE);
-  const users = await readUserAgents(defaults);
+  const customs = await readCustomAgents(defaults);
   return [
     ...defaults.map((agent) => ({ ...agent, isDefault: true })),
-    ...users.map((agent) => ({ ...agent, isDefault: false })),
+    ...customs.map((agent) => ({ ...agent, isDefault: false })),
   ];
 };
 
@@ -133,7 +153,7 @@ export const findAgent = async (
 export const createAgent = async (
   fields: CreateAgentRequest
 ): Promise<AgentMutation<Agent>> =>
-  updateUserAgents<AgentMutation<Agent>>((current, defaults) => {
+  updateCustomAgents<AgentMutation<Agent>>((current, defaults) => {
     if (hasSameName([...defaults, ...current], fields.name)) {
       return { next: current, result: { ok: false, error: 'duplicateName' } };
     }
@@ -150,7 +170,7 @@ export const updateAgent = async (
   id: string,
   patch: UpdateAgentRequest
 ): Promise<AgentMutation<Agent>> =>
-  updateUserAgents<AgentMutation<Agent>>((current, defaults) => {
+  updateCustomAgents<AgentMutation<Agent>>((current, defaults) => {
     if (defaults.some((agent) => agent.id === id)) {
       return { next: current, result: { ok: false, error: 'protected' } };
     }
@@ -169,7 +189,7 @@ export const updateAgent = async (
 
 /** エージェントを削除する（送受信済みのメッセージは残る） */
 export const deleteAgent = async (id: string): Promise<AgentMutation<null>> =>
-  updateUserAgents<AgentMutation<null>>((current, defaults) => {
+  updateCustomAgents<AgentMutation<null>>((current, defaults) => {
     if (defaults.some((agent) => agent.id === id)) {
       return { next: current, result: { ok: false, error: 'protected' } };
     }

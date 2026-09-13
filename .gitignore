@@ -42,6 +42,8 @@ next-env.d.ts
 
 # LLMailer
 /data/threads/
+/data/agents/custom.json
+# custom.json より前の名前のもの（初回に custom.json へ引き継ぐ。引き継ぎ後は削除してよい）
 /data/agents/user.json
 # 1 ファイルにまとめていた頃のもの（初回に data/threads/ へ引き継ぐ）
 /data/messages.json

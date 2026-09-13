@@ -15,22 +15,22 @@ export interface ComposeDraft {
   /** 返信の場合のスレッド ID */
   readonly threadId?: string;
   readonly inReplyTo?: string;
-  /** 件名・宛先を固定するか（返信時は固定） */
-  readonly locked: boolean;
+  /** 件名を固定するか（返信時は固定。宛先は返信でも変えられる） */
+  readonly subjectLocked: boolean;
 }
 
 const EMPTY_DRAFT: ComposeDraft = {
   agentIds: [],
   subject: '',
   body: '',
-  locked: false,
+  subjectLocked: false,
 };
 
 export interface UseComposeResult {
   readonly draft: ComposeDraft | null;
   readonly saving: boolean;
   readonly openNew: (agentIds?: readonly string[]) => void;
-  readonly openReply: (message: Message) => void;
+  readonly openReply: (message: Message, agentIds?: readonly string[]) => void;
   readonly openDraft: (message: Message) => void;
   readonly close: () => void;
   /** 送信に失敗したときに、入力内容を保ったまま作成ウィンドウへ戻す */
@@ -50,17 +50,23 @@ export const useCompose = (onDraftSaved: () => void): UseComposeResult => {
     setDraft({ ...EMPTY_DRAFT, agentIds });
   }, []);
 
-  // 返信の宛先は、そのメッセージの相手（受信なら差出人、送信なら同じ宛先）
-  const openReply = useCallback((message: Message) => {
-    setDraft({
-      agentIds: message.agentIds,
-      subject: message.subject,
-      body: '',
-      threadId: message.threadId,
-      inReplyTo: message.id,
-      locked: true,
-    });
-  }, []);
+  /*
+    返信の宛先の初期値は呼び出し側から渡せる（既定はそのメッセージの相手）。
+    あくまで初期値で、送信する前に付け替えられる。
+  */
+  const openReply = useCallback(
+    (message: Message, agentIds: readonly string[] = message.agentIds) => {
+      setDraft({
+        agentIds,
+        subject: message.subject,
+        body: '',
+        threadId: message.threadId,
+        inReplyTo: message.id,
+        subjectLocked: true,
+      });
+    },
+    []
+  );
 
   const openDraft = useCallback((message: Message) => {
     setDraft({
@@ -68,7 +74,7 @@ export const useCompose = (onDraftSaved: () => void): UseComposeResult => {
       agentIds: message.agentIds,
       subject: message.subject === NO_SUBJECT ? '' : message.subject,
       body: message.body,
-      locked: false,
+      subjectLocked: false,
     });
   }, []);
 
@@ -84,7 +90,7 @@ export const useCompose = (onDraftSaved: () => void): UseComposeResult => {
 
   const toggleRecipient = useCallback((agentId: string) => {
     setDraft((current) => {
-      if (!current || current.locked) {
+      if (!current) {
         return current;
       }
       const selected = current.agentIds.includes(agentId);

@@ -166,18 +166,30 @@ src/
 
 - `data/agents/default.json` — 既定のエージェント（コミット対象。画面からは変更・削除できない）
 - `data/agents/user.json` — 画面から追加したエージェント（`.gitignore` 済み）
-- `data/messages.json` — 送受信したメッセージ（`.gitignore` 済み）
-- `data/threadStates.json` — スレッドのアーカイブ日時（`.gitignore` 済み）
+- `data/threads/<threadId>.json` — スレッドごとの送受信メッセージ（`.gitignore` 済み）
+- `data/threads/drafts.json` — 下書き（`.gitignore` 済み）
+- `data/threads/states.json` — スレッドのアーカイブ日時（`.gitignore` 済み）
 
 既定と利用者ぶんを分けているのは、個人のエージェント（作業ディレクトリに絶対パスが入る）を
 git の差分に出さないため。1 ファイルだった頃の `data/agents.json` が残っている場合は、
 既定を除いたぶんが `data/agents/user.json` へ自動で引き継がれる（引き継ぎ後は削除してよい）。
 
+メッセージをスレッドごとのファイルに分けているのは、1 つの JSON にまとめていると
+返信が 1 通増えるたびにそれまでのやり取りをすべて書き直すことになるため。
+1 ファイルだった頃の `data/messages.json` が残っている場合は、初回の読み込みで
+スレッドごとに分割され、旧ファイルは `data/messages.json.bak` へ退避される
+（引き継ぎ後は削除してよい）。`data/threadStates.json` も同じように
+`data/threads/states.json` へ引き継がれる。
+
+`data/threads/` 配下は 1 ファイル = 1 スレッドなので、スレッド ID がそのままファイル名になる。
+同居する `drafts.json` / `states.json` を上書きされないよう、`drafts` / `states` / `index` は
+スレッド ID として使えない（指定すると 400 になる）。
+
 メッセージは相手のエージェント（`agentIds`）だけを持ち、自分が出したものかどうかは
 配信状態（`status`）から導出する。アドレスで宛先を書いていた頃のデータは読み込み時に変換される。
 
-スレッドは `messages.json` から導出されるまとまりで実体を持たないため、
-アーカイブの状態だけはスレッド ID をキーにした `threadStates.json` に分けて置く。
+スレッドは保存されたメッセージから導出されるまとまりで実体を持たないため、
+アーカイブの状態だけはスレッド ID をキーにした `data/threads/states.json` に分けて置く。
 真偽値ではなく日時を持ち、それより後のメッセージがあれば「やり取りが再開した」と見なす。
 
 ## 開発

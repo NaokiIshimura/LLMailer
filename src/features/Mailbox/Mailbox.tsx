@@ -38,6 +38,7 @@ import {
   useFileViewer,
   useGroupDefaultAgents,
   useNotificationSound,
+  useRenameThread,
   useReplyChime,
   useSendMessage,
   useTemplateEditor,
@@ -74,6 +75,8 @@ export const Mailbox = () => {
   const draftDeleter = useDeleteMessage();
   /** 対応が済んだスレッドの片付け（アーカイブと、その解除） */
   const archiver = useArchiveThread();
+  /** スレッドのお題の変更 */
+  const renamer = useRenameThread();
   const compose = useCompose(threads.reload);
   const agentEditor = useAgentEditor(agents.reload);
   /** 本文へ差し込める定型文（作成ウィンドウと設定で同じものを見せる） */
@@ -221,6 +224,9 @@ export const Mailbox = () => {
         }
       : null);
 
+  /** 保存済みのスレッドの ID（送信直後の組み立てぶんは、まだ保存されていない） */
+  const storedThreadId = detail.thread?.id ?? null;
+
   /** 選択中のスレッドが一覧に無いときは、先頭に足して選択状態が分かるようにする */
   const shownThreads: readonly Thread[] =
     threads.folder !== 'drafts' &&
@@ -353,6 +359,23 @@ export const Mailbox = () => {
     [archiver, selectedThreadId, threads]
   );
 
+  /**
+   * スレッドのお題を変える。
+   *
+   * 件名はスレッドが 1 つだけ持つので、一覧も本文もまとめて新しいものになる。
+   */
+  const handleRename = useCallback(
+    async (threadId: string, subject: string) => {
+      if (!(await renamer.rename(threadId, subject))) {
+        return;
+      }
+
+      threads.reload();
+      detail.reload();
+    },
+    [detail, renamer, threads]
+  );
+
   /** スレッドの最後のエージェント発言に返信する */
   const handleReply = useCallback(() => {
     const reversed = [...shownMessages].reverse();
@@ -478,6 +501,7 @@ export const Mailbox = () => {
         <p className={styles.notice}>{draftDeleter.error}</p>
       )}
       {archiver.error && <p className={styles.notice}>{archiver.error}</p>}
+      {renamer.error && <p className={styles.notice}>{renamer.error}</p>}
       {/* 編集フォームを開いていないときの失敗（削除など）はヘッダー下に出す */}
       {agentEditor.error && !agentEditor.form && (
         <p className={styles.notice}>{agentEditor.error}</p>
@@ -597,6 +621,13 @@ export const Mailbox = () => {
                 }
               }}
               archiving={archiver.archiving}
+              /* 保存前のスレッドはまだサーバー側に無いため、件名を変えられない */
+              onRename={
+                storedThreadId
+                  ? (subject) => void handleRename(storedThreadId, subject)
+                  : undefined
+              }
+              renaming={renamer.renaming}
               onOpenFile={fileViewer.open}
             />
           </Fragment>

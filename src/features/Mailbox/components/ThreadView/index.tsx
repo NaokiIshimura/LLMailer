@@ -1,7 +1,11 @@
 'use client';
 
-import { Fragment, useState } from 'react';
-import type { Message, Thread } from '@/types/mail';
+import { Fragment, useRef, useState } from 'react';
+import {
+  THREAD_SUBJECT_MAX_LENGTH,
+  type Message,
+  type Thread,
+} from '@/types/mail';
 import { useExitTransition, useMarkReadOnInteraction } from '../../hooks';
 import { Icon } from '../Icon';
 import { Spinner } from '../Loader';
@@ -30,6 +34,10 @@ interface ThreadViewProps {
   readonly onArchive: (archived: boolean) => void;
   /** アーカイブの切り替えリクエスト中か */
   readonly archiving: boolean;
+  /** スレッドのお題を変える。保存前のスレッドでは渡されない（変更できない） */
+  readonly onRename?: (subject: string) => void;
+  /** 件名の変更リクエスト中か */
+  readonly renaming: boolean;
   /** 本文に書かれたファイルパスをビューアで開く */
   readonly onOpenFile: (filePath: string, agentId?: string) => void;
 }
@@ -49,8 +57,15 @@ export const ThreadView = ({
   dismissing,
   onArchive,
   archiving,
+  onRename,
+  renaming,
   onOpenFile,
 }: ThreadViewProps) => {
+  /** 件名の編集中の値（null なら編集していない） */
+  const [editedSubject, setEditedSubject] = useState<string | null>(null);
+  /** Escape で取り消したあとに続く blur で、確定させないための目印 */
+  const cancelledRef = useRef(false);
+
   // 知らせが出ているあいだは、本文を触った時点で読み始めたとみなして既読にする
   const { interactionRef, markRead } = useMarkReadOnInteraction(
     newReplyCount > 0,
@@ -99,21 +114,87 @@ export const ThreadView = ({
     ? 'このスレッドをメールボックスへ戻す'
     : 'このスレッドをアーカイブする';
 
+  const startRename = () => {
+    cancelledRef.current = false;
+    setEditedSubject(thread.subject);
+  };
+
+  /** 入力を閉じて確定する（変えていなければ何も送らない） */
+  const commitRename = () => {
+    const subject = editedSubject?.trim() ?? '';
+    setEditedSubject(null);
+    if (cancelledRef.current) {
+      cancelledRef.current = false;
+      return;
+    }
+    if (subject && subject !== thread.subject) {
+      onRename?.(subject);
+    }
+  };
+
+  const cancelRename = () => {
+    cancelledRef.current = true;
+    setEditedSubject(null);
+  };
+
   return (
     <section className={styles.view} ref={interactionRef}>
       <header className={styles.header}>
         <div className={styles.heading}>
           <div className={styles.subjectRow}>
-            <h1 className={styles.subject}>{thread.subject}</h1>
+            {editedSubject === null ? (
+              <h1 className={styles.subject}>{thread.subject}</h1>
+            ) : (
+              /* Enter で確定できるよう、入力はフォームに入れておく */
+              <form
+                className={styles.subjectForm}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  commitRename();
+                }}
+              >
+                <input
+                  className={styles.subjectInput}
+                  value={editedSubject}
+                  maxLength={THREAD_SUBJECT_MAX_LENGTH}
+                  autoFocus
+                  aria-label="スレッドの件名"
+                  onChange={(event) => setEditedSubject(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Escape') {
+                      cancelRename();
+                    }
+                  }}
+                  onBlur={commitRename}
+                />
+              </form>
+            )}
+            {/*
+              お題は後から変えられる（過去のやり取りの件名もまとめて変わる）。
+              保存前のスレッドは変えられないため、そのときは出さない。
+            */}
+            {onRename && editedSubject === null && (
+              <button
+                type="button"
+                className={styles.subjectButton}
+                onClick={startRename}
+                disabled={renaming}
+                aria-label="スレッドの件名を変える"
+                title="スレッドの件名を変える"
+              >
+                {renaming ? <Spinner /> : <Icon name="edit" size={16} />}
+              </button>
+            )}
             {/*
               対応が済んだスレッドを片付ける（アーカイブフォルダでは戻す）。
               返信の隣に置くと取り違えて押されるため、件名の横まで離す。
               対応中はまだ片付けられないため、そのあいだは出さない。
+              件名を編集しているあいだも、入力を広く使えるように引っ込める。
             */}
-            {!thread.hasPending && (
+            {!thread.hasPending && editedSubject === null && (
               <button
                 type="button"
-                className={styles.archiveButton}
+                className={styles.subjectButton}
                 onClick={() => onArchive(!thread.archived)}
                 disabled={archiving}
                 aria-label={archiveLabel}

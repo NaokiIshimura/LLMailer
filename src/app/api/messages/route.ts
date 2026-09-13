@@ -6,10 +6,10 @@ import { isSafeThreadId } from '@/lib/store/threadFiles';
 import {
   DELIVERY_PROCESS_ID,
   deleteMessage,
-  listThreadMessages,
   saveMessage,
   saveMessages,
 } from '@/lib/store/messageRepository';
+import { readThread } from '@/lib/store/threadRepository';
 import { claudeCodeTransport } from '@/lib/transport/claudeCodeTransport';
 import { DeliveryError } from '@/lib/transport/types';
 import {
@@ -161,11 +161,13 @@ export const POST = async (request: NextRequest): Promise<NextResponse> => {
     const agentNames = new Map(agents.map((agent) => [agent.id, agent.name]));
 
     const threadId = payload.threadId ?? randomUUID();
-    const previous = payload.threadId
-      ? await listThreadMessages(payload.threadId)
-      : [];
+    const thread = payload.threadId ? await readThread(payload.threadId) : null;
+    const previous = thread?.messages ?? [];
+    // 続きを送るときの件名はスレッドのお題に揃える（改名していれば新しい方が伝わる）
     const subject =
-      previous[0]?.subject ?? (payload.subject.trim() || NO_SUBJECT);
+      thread && thread.messages.length > 0
+        ? thread.subject
+        : payload.subject.trim() || NO_SUBJECT;
 
     const sent: Message = {
       id: randomUUID(),
@@ -190,7 +192,7 @@ export const POST = async (request: NextRequest): Promise<NextResponse> => {
       await deleteMessage(payload.draftId);
     }
 
-    const history = [...previous.filter((m) => m.status !== 'draft'), sent];
+    const history = [...previous, sent];
 
     // 配信の完了は待たずに応答を返す。返信は届き次第プレースホルダへ上書きする
     after(async () => {

@@ -12,14 +12,12 @@ const THREADS_DIR = 'threads';
 /** 下書き。スレッドに属さないので 1 ファイルにまとめる */
 export const DRAFTS_FILE = `${THREADS_DIR}/drafts.json`;
 
-/** スレッドのアーカイブ日時 */
-export const STATES_FILE = `${THREADS_DIR}/states.json`;
-
 /**
  * スレッド以外の用途で使っているファイル名。
  *
  * スレッド ID をそのままファイル名にするため、
- * これらと同じ ID を許すと下書きやアーカイブ日時を上書きしてしまう。
+ * これらと同じ ID を許すと下書きや、以前アーカイブ日時を置いていたファイルを
+ * 上書きしてしまう（'states' は過去のファイル名と衝突させないために残す）。
  */
 const RESERVED_IDS: ReadonlySet<string> = new Set(['drafts', 'states', 'index']);
 
@@ -52,12 +50,4 @@ export const listThreadIds = async (): Promise<readonly string[]> => {
   return names
     .map((name) => name.slice(0, -JSON_EXTENSION.length))
     .filter(isSafeThreadId);
-};
-
-/** 保存済みのスレッドファイル（メッセージの入っているものだけ） */
-export const listThreadFiles = async (): Promise<readonly string[]> => {
-  const threadIds = await listThreadIds();
-  return threadIds
-    .map(threadFile)
-    .filter((file): file is string => file !== undefined);
 };

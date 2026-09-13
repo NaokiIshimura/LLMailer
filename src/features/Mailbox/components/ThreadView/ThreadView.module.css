@@ -14,8 +14,9 @@
   border-bottom: 1px solid var(--color-border);
 }
 
-/* 件名が長くても返信ボタンを押し出さない */
+/* 件名が長くても返信ボタンを押し出さない。件名を編集するときは余白ぶんまで広げる */
 .heading {
+  flex: 1;
   min-width: 0;
 }
 
@@ -57,8 +58,26 @@
   background: var(--color-accent-weak);
 }
 
+/* 編集中は返信ボタンの手前まで入力を広げる（件名は長くなりがちなため） */
+.subjectForm {
+  flex: 1;
+  min-width: 0;
+}
+
+.subjectInput {
+  width: 100%;
+  min-width: 0;
+  padding: 4px 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius);
+  /* 見出しと同じ大きさにして、押した位置から変わったように見せる */
+  font-size: 16px;
+  font-weight: 700;
+}
+
 /* 件名の横に置く控えめなアイコンボタン（主な操作は返信であることを崩さない） */
-.archiveButton {
+.subjectButton {
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
@@ -71,12 +90,12 @@
   color: var(--color-text-muted);
 }
 
-.archiveButton:hover:not(:disabled) {
+.subjectButton:hover:not(:disabled) {
   background: var(--color-surface-muted);
   color: var(--color-text);
 }
 
-.archiveButton:disabled {
+.subjectButton:disabled {
   opacity: 0.5;
 }
 

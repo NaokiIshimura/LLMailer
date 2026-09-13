@@ -50,5 +50,6 @@ next-env.d.ts
 /data/messages.json
 /data/messages.json.bak
 /data/threadStates.json
+/data/threadStates.json.bak
 .env.local
 .claude/

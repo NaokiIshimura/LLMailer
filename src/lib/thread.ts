@@ -204,14 +204,14 @@ export const countUnread = (
 ): number =>
   messages.filter((message) => isUnreadReply(message, archivedThreadIds)).length;
 
-/** 宛先ごとの未読件数（サイドバーの宛先一覧に出す） */
-export const countUnreadByAgent = (
+/** 当てはまるメッセージを、やり取りの相手ごとに数える */
+const countByAgent = (
   messages: readonly Message[],
-  archivedThreadIds?: ReadonlySet<string>
+  matches: (message: Message) => boolean
 ): Readonly<Record<string, number>> => {
   const counts: Record<string, number> = {};
   for (const message of messages) {
-    if (!isUnreadReply(message, archivedThreadIds)) {
+    if (!matches(message)) {
       continue;
     }
     for (const agentId of message.agentIds) {
@@ -220,6 +220,15 @@ export const countUnreadByAgent = (
   }
   return counts;
 };
+
+/** 宛先ごとの未読件数（サイドバーの宛先一覧に出す） */
+export const countUnreadByAgent = (
+  messages: readonly Message[],
+  archivedThreadIds?: ReadonlySet<string>
+): Readonly<Record<string, number>> =>
+  countByAgent(messages, (message) =>
+    isUnreadReply(message, archivedThreadIds)
+  );
 
 /**
  * 受信（エージェントの返信）の件数。
@@ -233,6 +242,12 @@ export const countReceived = (messages: readonly Message[]): number =>
 /** 対応中（応答待ち）の件数 */
 export const countPending = (messages: readonly Message[]): number =>
   messages.filter((message) => message.status === 'pending').length;
+
+/** 宛先ごとの対応中件数（サイドバーの宛先一覧に出す） */
+export const countPendingByAgent = (
+  messages: readonly Message[]
+): Readonly<Record<string, number>> =>
+  countByAgent(messages, (message) => message.status === 'pending');
 
 /**
  * スレッド本文を「送信とその返信」のまとまり単位に分け、新しいまとまりを先頭にする。

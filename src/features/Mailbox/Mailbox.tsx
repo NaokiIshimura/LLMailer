@@ -9,6 +9,7 @@ import {
   NO_SUBJECT,
   type Agent,
   type Folder,
+  type ListedTemplate,
   type Message,
   type SendMessageResponse,
   type Thread,
@@ -24,6 +25,7 @@ import {
   HomeView,
   Icon,
   SettingsView,
+  TemplateEditor,
   ThreadList,
   ThreadView,
 } from './components';
@@ -38,6 +40,8 @@ import {
   useNotificationSound,
   useReplyChime,
   useSendMessage,
+  useTemplateEditor,
+  useTemplates,
   useTheme,
   useThreadDetail,
   useThreads,
@@ -72,6 +76,9 @@ export const Mailbox = () => {
   const archiver = useArchiveThread();
   const compose = useCompose(threads.reload);
   const agentEditor = useAgentEditor(agents.reload);
+  /** 本文へ差し込める定型文（作成ウィンドウと設定で同じものを見せる） */
+  const templates = useTemplates();
+  const templateEditor = useTemplateEditor(templates.reload);
   const theme = useTheme();
   const notificationSound = useNotificationSound();
   /** 左ペインでデフォルトのエージェントを 1 つにまとめるかの設定 */
@@ -420,6 +427,20 @@ export const Mailbox = () => {
     [agentEditor]
   );
 
+  const handleDeleteTemplate = useCallback(
+    async (target: ListedTemplate) => {
+      const confirmed = window.confirm(
+        `テンプレート「${target.name}」を削除しますか？`
+      );
+      if (!confirmed) {
+        return;
+      }
+
+      await templateEditor.remove(target.id);
+    },
+    [templateEditor]
+  );
+
   return (
     <div className={styles.app}>
       <header className={styles.header}>
@@ -492,6 +513,16 @@ export const Mailbox = () => {
             onPreviewNotificationSound={notificationSound.preview}
             groupDefaultAgents={groupDefaultAgents.grouped}
             onSelectGroupDefaultAgents={groupDefaultAgents.setGrouped}
+            templates={templates.templates}
+            templateError={
+              // 編集フォームを開いているときは、そちらに出るので重ねない
+              templates.error ??
+              (templateEditor.form ? null : templateEditor.error)
+            }
+            deletingTemplate={templateEditor.deleting}
+            onCreateTemplate={templateEditor.openNew}
+            onEditTemplate={templateEditor.openEdit}
+            onDeleteTemplate={(template) => void handleDeleteTemplate(template)}
           />
         ) : threads.folder === 'contacts' ? (
           <>
@@ -564,6 +595,7 @@ export const Mailbox = () => {
         <ComposeWindow
           draft={compose.draft}
           agents={agents.agents}
+          templates={templates.templates}
           sending={sender.sending}
           saving={compose.saving}
           error={sender.error}
@@ -596,6 +628,17 @@ export const Mailbox = () => {
           onChange={agentEditor.update}
           onSave={() => void handleSaveAgent()}
           onClose={agentEditor.close}
+        />
+      )}
+
+      {templateEditor.form && (
+        <TemplateEditor
+          form={templateEditor.form}
+          saving={templateEditor.saving}
+          error={templateEditor.error}
+          onChange={templateEditor.update}
+          onSave={() => void templateEditor.save()}
+          onClose={templateEditor.close}
         />
       )}
 

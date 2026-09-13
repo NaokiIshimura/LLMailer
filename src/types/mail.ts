@@ -331,3 +331,41 @@ export interface SaveDraftRequest {
   readonly body: string;
   readonly threadId?: string;
 }
+
+/**
+ * 本文へ差し込む定型文。
+ *
+ * エージェントへの指示は「調べてほしいこと」「出力してほしいこと」のように
+ * 書き出しが似通うため、よく使う型を保存しておけるようにする。
+ */
+export interface Template {
+  /**
+   * テンプレートの識別子。追加時にサーバーが採番し、後から変更しない。
+   * 同梱するぶんだけは、JSON をそのまま読んで分かるよう手で名前を付けている。
+   */
+  readonly id: string;
+  readonly name: string;
+  /** 差し込む定型文。改行やインデントもそのまま指示になるため加工しない */
+  readonly body: string;
+  readonly description?: string;
+}
+
+/**
+ * 一覧で返すテンプレート。
+ *
+ * デフォルトかどうかは data/templates/default.json に入っているかで決まり、
+ * このファイルはサーバーでしか読めない。エージェントと同じく、
+ * 一覧を返すときにサーバーが付ける（保存する値ではない）。
+ */
+export interface ListedTemplate extends Template {
+  readonly isDefault: boolean;
+}
+
+/**
+ * POST /api/templates のリクエストボディ。
+ * ID はサーバーが採番するので、追加でも変更でも同じ内容を送る。
+ */
+export type CreateTemplateRequest = Omit<Template, 'id'>;
+
+/** PUT /api/templates/[id] のリクエストボディ */
+export type UpdateTemplateRequest = Omit<Template, 'id'>;

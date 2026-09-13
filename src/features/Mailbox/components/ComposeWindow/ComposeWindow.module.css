@@ -227,3 +227,9 @@
   align-items: center;
   color: var(--color-danger);
 }
+
+/* テンプレートの差し込みは本文の下に置き、宛先・件名の並びと混ざらないようにする */
+.templateRow {
+  display: flex;
+  padding: 6px 12px 10px;
+}

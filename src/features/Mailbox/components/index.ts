@@ -18,6 +18,9 @@ export {
   type SegmentedOption,
 } from './SegmentedControl';
 export { SettingsView } from './SettingsView';
+export { TemplateEditor } from './TemplateEditor';
+export { TemplatePicker } from './TemplatePicker';
+export { TemplateSettings } from './TemplateSettings';
 export { ThemeToggle } from './ThemeToggle';
 export { ThreadList } from './ThreadList';
 export { ThreadView } from './ThreadView';

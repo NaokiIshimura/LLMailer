@@ -1,14 +1,23 @@
 'use client';
 
-import { isFullAccessAgent, type Agent } from '@/types/mail';
+import { useRef } from 'react';
+import { insertTemplateBody } from '@/lib/composeTemplate';
+import {
+  isFullAccessAgent,
+  type Agent,
+  type ListedTemplate,
+} from '@/types/mail';
 import { useComposeSize, type ComposeDraft } from '../../hooks';
 import { Icon } from '../Icon';
 import { Spinner } from '../Loader';
+import { TemplatePicker } from '../TemplatePicker';
 import styles from './ComposeWindow.module.css';
 
 interface ComposeWindowProps {
   readonly draft: ComposeDraft;
   readonly agents: readonly Agent[];
+  /** 本文へ差し込める定型文 */
+  readonly templates: readonly ListedTemplate[];
   readonly sending: boolean;
   readonly saving: boolean;
   readonly error: string | null;
@@ -25,6 +34,7 @@ interface ComposeWindowProps {
 export const ComposeWindow = ({
   draft,
   agents,
+  templates,
   sending,
   saving,
   error,
@@ -37,6 +47,32 @@ export const ComposeWindow = ({
 }: ComposeWindowProps) => {
   const { size, maximized, resizing, toggleMaximized, startResize } =
     useComposeSize();
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+
+  /** テンプレートは本文のカーソル位置へ差し込む（選択範囲があれば置き換える） */
+  const handleSelectTemplate = (template: ListedTemplate): void => {
+    const textarea = bodyRef.current;
+    // 本文を触っていなければ末尾に足す
+    const start = textarea?.selectionStart ?? draft.body.length;
+    const end = textarea?.selectionEnd ?? draft.body.length;
+    const { body, caret } = insertTemplateBody(
+      draft.body,
+      start,
+      end,
+      template.body
+    );
+
+    onChange({ body });
+    // 差し込んだ本文が描かれる前に動かしても戻されるため、次の描画を待つ
+    requestAnimationFrame(() => {
+      const current = bodyRef.current;
+      if (!current) {
+        return;
+      }
+      current.focus();
+      current.setSelectionRange(caret, caret);
+    });
+  };
 
   const canSend =
     draft.agentIds.length > 0 && draft.body.trim().length > 0 && !sending;
@@ -151,11 +187,19 @@ export const ComposeWindow = ({
         </div>
 
         <textarea
+          ref={bodyRef}
           className={styles.bodyInput}
           value={draft.body}
           placeholder="エージェントへの指示を書いてください"
           onChange={(event) => onChange({ body: event.target.value })}
         />
+
+        <div className={styles.templateRow}>
+          <TemplatePicker
+            templates={templates}
+            onSelect={handleSelectTemplate}
+          />
+        </div>
       </div>
 
       <footer className={styles.footer}>

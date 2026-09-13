@@ -1,8 +1,10 @@
 'use client';
 
 import type { ThemePreference } from '@/lib/theme';
+import type { ListedTemplate } from '@/types/mail';
 import { GroupDefaultAgentsToggle } from '../GroupDefaultAgentsToggle';
 import { NotificationSoundToggle } from '../NotificationSoundToggle';
+import { TemplateSettings } from '../TemplateSettings';
 import { ThemeToggle } from '../ThemeToggle';
 import styles from './SettingsView.module.css';
 
@@ -15,6 +17,13 @@ interface SettingsViewProps {
   /** デフォルトのエージェントのメールボックスを 1 つにまとめるか */
   readonly groupDefaultAgents: boolean;
   readonly onSelectGroupDefaultAgents: (grouped: boolean) => void;
+  /** 本文へ差し込める定型文 */
+  readonly templates: readonly ListedTemplate[];
+  readonly templateError: string | null;
+  readonly deletingTemplate: boolean;
+  readonly onCreateTemplate: () => void;
+  readonly onEditTemplate: (template: ListedTemplate) => void;
+  readonly onDeleteTemplate: (template: ListedTemplate) => void;
 }
 
 /**
@@ -31,6 +40,12 @@ export const SettingsView = ({
   onPreviewNotificationSound,
   groupDefaultAgents,
   onSelectGroupDefaultAgents,
+  templates,
+  templateError,
+  deletingTemplate,
+  onCreateTemplate,
+  onEditTemplate,
+  onDeleteTemplate,
 }: SettingsViewProps) => (
   <section className={styles.view}>
     <header className={styles.header}>
@@ -83,6 +98,18 @@ export const SettingsView = ({
           onPreview={onPreviewNotificationSound}
         />
       </div>
+
+      <h2 className={`${styles.groupTitle} ${styles.nextGroupTitle}`}>
+        テンプレート
+      </h2>
+      <TemplateSettings
+        templates={templates}
+        error={templateError}
+        deleting={deletingTemplate}
+        onCreate={onCreateTemplate}
+        onEdit={onEditTemplate}
+        onDelete={onDeleteTemplate}
+      />
     </div>
   </section>
 );

@@ -140,7 +140,7 @@ export const Mailbox = () => {
 
   const headMessage = recentSend?.sent;
 
-  /** 新規送信の直後は、サーバーに保存される前でもスレッドとして表示する */
+  /** 送信直後のスレッドを開いたときは、詳細が届くまで送信結果からスレッドを組み立てて表示する */
   const shownThread: Thread | null =
     detail.thread ??
     (headMessage && shownMessages.length > 0
@@ -161,7 +161,7 @@ export const Mailbox = () => {
         }
       : null);
 
-  /** 送信直後のスレッドは一覧にまだ無いので、先頭に足して選択状態が分かるようにする */
+  /** 選択中のスレッドが一覧に無いときは、先頭に足して選択状態が分かるようにする */
   const shownThreads: readonly Thread[] =
     threads.folder !== 'drafts' &&
     shownThread &&
@@ -175,19 +175,12 @@ export const Mailbox = () => {
       return;
     }
 
-    // 新規送信でもスレッド ID をここで決めておき、応答を待たずにそのスレッドを開く
+    // 新規送信でもスレッド ID をここで決めておき、サーバーの採番を待たずに送る
     const threadId = draft.threadId ?? crypto.randomUUID();
 
-    // 配信の完了を待たずに作成ウィンドウを閉じ、送信先のスレッドを開く
+    // 配信の完了を待たずに作成ウィンドウを閉じる。
+    // 送信しても見ている場所は変えないため、フォルダ・スレッドの選択はそのままにする。
     compose.close();
-    setSelectedThreadId(threadId);
-    // 送信したやり取りがそのまま見えるよう、一覧に出ないフォルダ・宛先からはメールボックスへ移る
-    const listed =
-      threads.folder === 'mailbox' &&
-      (threads.agentId === null || draft.agentIds.includes(threads.agentId));
-    if (!listed) {
-      threads.selectFolder('mailbox');
-    }
 
     const result = await sender.send({
       agentIds: draft.agentIds,
@@ -201,7 +194,6 @@ export const Mailbox = () => {
     if (!result) {
       // 送信できなかったときは入力内容を失わないよう作成ウィンドウへ戻す
       compose.restore(draft);
-      setSelectedThreadId(draft.threadId ?? null);
       return;
     }
 

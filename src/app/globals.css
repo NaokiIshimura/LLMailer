@@ -24,6 +24,16 @@
   --radius: 8px;
   --shadow: 0 1px 3px rgba(16, 24, 40, 0.08);
   --shadow-window: 0 12px 32px rgba(16, 24, 40, 0.24);
+  /*
+   * アニメーションの長さ。状態が瞬時に切り替わらず、変化を目で追えるようにする。
+   * テーマでは変えないため、ここにだけ置く。
+   */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+  /* 動き出しは速く、止まり際はゆるやかにする */
+  --easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --easing-decelerate: cubic-bezier(0, 0, 0.2, 1);
 }
 
 :root[data-theme='dark'] {
@@ -66,12 +76,23 @@ body {
   font-size: 14px;
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;
+  /* テーマを切り替えたときに、地色と文字色が入れ替わる過程を見せる */
+  transition:
+    background var(--duration-base) var(--easing-standard),
+    color var(--duration-base) var(--easing-standard);
 }
 
 button {
   font: inherit;
   color: inherit;
   cursor: pointer;
+  /* 押せる・押せないや、指したときの色が唐突に変わらないようにする */
+  transition:
+    background var(--duration-fast) var(--easing-standard),
+    border-color var(--duration-fast) var(--easing-standard),
+    color var(--duration-fast) var(--easing-standard),
+    filter var(--duration-fast) var(--easing-standard),
+    opacity var(--duration-fast) var(--easing-standard);
 }
 
 button:disabled {
@@ -84,4 +105,22 @@ textarea,
 select {
   font: inherit;
   color: inherit;
+  transition:
+    background var(--duration-fast) var(--easing-standard),
+    border-color var(--duration-fast) var(--easing-standard);
+}
+
+/*
+ * 動きを減らす設定のときは、アプリ全体のアニメーションを止める。
+ * 0 ではなく 0.01ms にするのは、終了を待って進む処理を止めないため。
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

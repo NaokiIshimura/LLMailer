@@ -22,6 +22,11 @@
   font-size: 13px;
   /* 「システム」などの短い語が 2 行にならないようにする */
   white-space: nowrap;
+  /* どれを選んだかが移るのを見せたいので、ホバーより長めに取る */
+  transition:
+    background var(--duration-base) var(--easing-standard),
+    border-color var(--duration-base) var(--easing-standard),
+    color var(--duration-base) var(--easing-standard);
 }
 
 .item:hover {

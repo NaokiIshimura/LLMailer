@@ -129,6 +129,12 @@ src/
   （開閉状態のようなローカル UI 状態は持ってよい）。
 - ブラウザ API を触るものには `'use client'` を付ける。
 - スタイルは CSS Modules のみ。色・間隔は `globals.css` の CSS 変数を使い、値を直書きしない。
+- 状態が瞬時に切り替わらないよう、動きの長さ・加減速も `globals.css` の
+  `--duration-fast` / `--duration-base` / `--duration-slow` と `--easing-*` を使う。
+  動かすのは `opacity` / `transform` / 色に限り、`transition: all` とレイアウトを
+  揺らすプロパティ（`width` / `height` など）は使わない。
+  `@keyframes` の名前は CSS Modules が書き換えるため、**使う側と同じファイルに定義する**
+  （`globals.css` に置いても参照できない）。
 
 ### フック（`features/Mailbox/hooks/`）
 

@@ -88,6 +88,8 @@
   align-items: center;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
+  /* 指した行・選んだ行が瞬時に切り替わらないようにする */
+  transition: background var(--duration-fast) var(--easing-standard);
 }
 
 .row:hover {
@@ -123,6 +125,11 @@
   color: var(--color-text-muted);
   transform: translateY(-50%);
   opacity: 0;
+  /* 行を指したときに現れるので、色の変化より長めに取ってふわりと出す */
+  transition:
+    background var(--duration-fast) var(--easing-standard),
+    color var(--duration-fast) var(--easing-standard),
+    opacity var(--duration-base) var(--easing-standard);
 }
 
 /* マウスで指している行と、キーボードで辿り着いたボタンだけ出す */

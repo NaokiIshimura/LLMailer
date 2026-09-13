@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { toAgentMailboxes, type AgentMailbox } from '@/lib/agentMailbox';
 import { toThreadExchanges } from '@/lib/thread';
 import {
@@ -543,7 +543,8 @@ export const Mailbox = () => {
             />
           </>
         ) : (
-          <>
+          // 同じ組み合わせのまま中身だけが入れ替わるので、移ったら作り直して出し直す
+          <Fragment key={`${threads.folder}:${threads.mailboxKey ?? ''}`}>
             <ThreadList
               folder={threads.folder}
               mailbox={listedMailbox}
@@ -589,7 +590,7 @@ export const Mailbox = () => {
               archiving={archiver.archiving}
               onOpenFile={fileViewer.open}
             />
-          </>
+          </Fragment>
         )}
       </div>
 

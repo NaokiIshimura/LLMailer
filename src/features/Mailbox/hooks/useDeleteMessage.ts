@@ -14,8 +14,8 @@ export interface UseDeleteMessageResult {
 /**
  * 保存済みのメッセージを削除する。
  *
- * 配信に失敗した返信は消さない限り「失敗しました」が残り続けてしまうため、
- * その片付け（再送後の削除・取り消し）と、下書きの削除の両方で使う。
+ * 送受信のやり取りは記録として残すので、消すのは下書きだけ
+ * （失敗・中断の片付けは、記録を残す取り消しで行う）。
  */
 export const useDeleteMessage = (): UseDeleteMessageResult => {
   const [deleting, setDeleting] = useState(false);

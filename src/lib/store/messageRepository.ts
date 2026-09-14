@@ -1,4 +1,8 @@
-import type { Message } from '@/types/mail';
+import {
+  isSettledMessage,
+  isUnansweredMessage,
+  type Message,
+} from '@/types/mail';
 import { ensureMigrated } from './migration';
 import { isSafeThreadId, listThreadIds } from './threadFiles';
 import {
@@ -178,6 +182,54 @@ export const cancelPendingMessage = async (id: string): Promise<boolean> => {
     return { next: { ...record, messages }, result: canceled };
   });
 };
+
+/**
+ * 失敗・中断したメッセージへ、対応が済んだ印を書き足す。
+ *
+ * 再送でも取り消しでも元の 1 通は消さない
+ * （何があったのか、どう片付けたのかを、あとから追えるようにするため）。
+ * 済んだ話になるので、未読としては数えない。
+ * 見つからない・すでに対応済みのときは false。
+ */
+const settleUnansweredMessage = async (
+  id: string,
+  settled: Pick<Message, 'resentAt' | 'dismissedAt'>
+): Promise<boolean> => {
+  await ensureMigrated();
+  const location = await findMessageLocation(id);
+  // 下書きは配信しないので、失敗も中断もしない
+  if (!location || location.kind === 'draft') {
+    return false;
+  }
+
+  return updateThreadRecord(location.threadId, (record) => {
+    let marked = false;
+    const messages = record.messages.map((message) => {
+      if (
+        message.id !== id ||
+        !isUnansweredMessage(message) ||
+        isSettledMessage(message)
+      ) {
+        return message;
+      }
+      marked = true;
+      return { ...message, ...settled, read: true };
+    });
+    return { next: { ...record, messages }, result: marked };
+  });
+};
+
+/** 失敗・中断したメッセージへ、再送した記録を残す */
+export const markMessageAsResent = async (
+  id: string,
+  resentAt: string
+): Promise<boolean> => settleUnansweredMessage(id, { resentAt });
+
+/** 失敗・中断したメッセージへ、再送せずに取り消した記録を残す */
+export const markMessageAsDismissed = async (
+  id: string,
+  dismissedAt: string
+): Promise<boolean> => settleUnansweredMessage(id, { dismissedAt });
 
 /**
  * 前のプロセスが残した対応中メッセージを配信失敗にする。

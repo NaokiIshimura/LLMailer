@@ -36,6 +36,7 @@ import {
   useCancelDelivery,
   useCompose,
   useDeleteMessage,
+  useDismissMessage,
   useFileViewer,
   useGroupDefaultAgents,
   useNotificationSound,
@@ -71,8 +72,8 @@ export const Mailbox = () => {
     threadPaneVisible
   );
   const sender = useSendMessage();
-  /** 返信を得られなかった通を消すためのもの（再送後の片付けと、再送しない取り消しで使う） */
-  const failureDeleter = useDeleteMessage();
+  /** 返信を得られなかった通（失敗・中断）を、再送せずに取り消すためのもの */
+  const dismisser = useDismissMessage();
   const draftDeleter = useDeleteMessage();
   /** 対応中の配信の中断 */
   const canceler = useCancelDelivery();
@@ -290,24 +291,11 @@ export const Mailbox = () => {
   }, []);
 
   /**
-   * 返信を得られなかった返信そのものを消す。
+   * 配信に失敗した返信を、元の送信内容でもう一度配信する。
    *
-   * 「失敗しました」「中断しました」の行も一覧の失敗ラベルも、この 1 通だけが根拠なので、
-   * 消せば再送・取り消しのボタンもラベルも残らない。
+   * 失敗・中断の 1 通は消さずに残し、サーバー側で「再送した」ことだけを書き足す。
+   * どんなエラーで送り直したのかが、あとからスレッドを読めば分かるようにするため。
    */
-  const dismissMessage = useCallback(
-    async (unanswered: Message): Promise<boolean> => {
-      if (!(await failureDeleter.remove(unanswered.id))) {
-        return false;
-      }
-
-      forgetRecentPending(unanswered.id);
-      return true;
-    },
-    [failureDeleter, forgetRecentPending]
-  );
-
-  /** 配信に失敗した返信を、元の送信内容でもう一度配信する */
   const handleRetry = useCallback(
     async (failed: Message) => {
       const original = shownMessages.find(
@@ -323,32 +311,36 @@ export const Mailbox = () => {
         body: original.body,
         threadId: failed.threadId,
         inReplyTo: original.id,
+        resendOf: failed.id,
       });
 
       if (!result) {
         return;
       }
 
-      // 再送したからには、もう済んだ失敗・中断を残さない
-      await dismissMessage(failed);
       setRecentSend(result);
       threads.reload();
       detail.reload();
     },
-    [detail, dismissMessage, sender, shownMessages, threads]
+    [detail, sender, shownMessages, threads]
   );
 
-  /** 返信を得られなかった返信を、再送せずに取り消す */
+  /**
+   * 返信を得られなかった返信を、再送せずに取り消す。
+   *
+   * 1 通は消さずに「取り消しました」として残し、
+   * 一覧の失敗ラベルと未読からだけ外す（何があったかは、あとから読める）。
+   */
   const handleDismiss = useCallback(
     async (unanswered: Message) => {
-      if (!(await dismissMessage(unanswered))) {
+      if (!(await dismisser.dismiss(unanswered.id))) {
         return;
       }
 
       threads.reload();
       detail.reload();
     },
-    [detail, dismissMessage, threads]
+    [detail, dismisser, threads]
   );
 
   /**
@@ -532,9 +524,7 @@ export const Mailbox = () => {
       </header>
 
       {agents.error && <p className={styles.notice}>{agents.error}</p>}
-      {failureDeleter.error && (
-        <p className={styles.notice}>{failureDeleter.error}</p>
-      )}
+      {dismisser.error && <p className={styles.notice}>{dismisser.error}</p>}
       {canceler.error && <p className={styles.notice}>{canceler.error}</p>}
       {draftDeleter.error && (
         <p className={styles.notice}>{draftDeleter.error}</p>
@@ -653,7 +643,7 @@ export const Mailbox = () => {
               onMarkRead={detail.markRead}
               onRetry={handleRetry}
               onDismiss={handleDismiss}
-              dismissing={failureDeleter.deleting}
+              dismissing={dismisser.dismissing}
               onCancelDelivery={handleCancelDelivery}
               canceling={canceler.canceling}
               onArchive={(archived) => {

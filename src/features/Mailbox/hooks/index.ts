@@ -31,6 +31,10 @@ export {
   type UseDirectoryBrowserResult,
 } from './useDirectoryBrowser';
 export {
+  useDismissMessage,
+  type UseDismissMessageResult,
+} from './useDismissMessage';
+export {
   useExitTransition,
   type UseExitTransitionResult,
 } from './useExitTransition';

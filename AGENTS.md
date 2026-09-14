@@ -91,6 +91,8 @@ src/
   （LLMailer 自身が Claude Code から起動されている場合があるため）。
 - **エージェントの `id` はサーバーが採番**し、リクエストからは受け取らない。画面には出さず、名前で見分ける。
   名前の重複は 409 で弾く。
+- **エージェントの `model` は省略できる**。省略したぶんは `--model` を渡さず、
+  Claude Code 側のデフォルトに任せる（画面には「Claude Code のデフォルト」と出す）。
 - **読み取り専用エージェントは `disallowedTools` + `settingSources` から `user` を外す**ことで実現する。
   `allowedTools` だけではグローバルの `permissions.allow` を打ち消せない。
 

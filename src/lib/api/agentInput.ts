@@ -29,8 +29,7 @@ export const parseAgentFields = (value: unknown): UpdateAgentRequest | null => {
   const body = value as Record<string, unknown>;
 
   const name = requiredText(body.name);
-  const model = requiredText(body.model);
-  if (name === null || model === null) {
+  if (name === null) {
     return null;
   }
 
@@ -103,7 +102,8 @@ export const parseAgentFields = (value: unknown): UpdateAgentRequest | null => {
 
   const fields: UpdateAgentRequest = {
     name,
-    model,
+    // 未指定なら Claude Code のデフォルトに任せるので、キーごと落とす
+    model: optionalText(body.model),
     description: optionalText(body.description),
     systemPrompt: optionalText(body.systemPrompt),
     workingDirectory: optionalText(body.workingDirectory),

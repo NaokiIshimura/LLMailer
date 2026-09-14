@@ -88,7 +88,7 @@ export const useAgentEditor = (onChanged: () => void): UseAgentEditorResult => {
     setForm({
       editing: agent.id,
       name: agent.name,
-      model: agent.model,
+      model: agent.model ?? '',
       description: agent.description ?? '',
       systemPrompt: agent.systemPrompt ?? '',
       workingDirectory: agent.workingDirectory ?? '.',

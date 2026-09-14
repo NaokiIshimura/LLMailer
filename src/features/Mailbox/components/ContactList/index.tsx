@@ -1,5 +1,6 @@
 'use client';
 
+import { formatModel } from '@/lib/agents/models';
 import type { ListedAgent } from '@/types/mail';
 import { Icon } from '../Icon';
 import { PermissionBadge } from '../PermissionBadge';
@@ -19,7 +20,7 @@ const matches = (agent: ListedAgent, query: string): boolean => {
     return true;
   }
   const keyword = query.toLowerCase();
-  return [agent.name, agent.description ?? '', agent.model].some(
+  return [agent.name, agent.description ?? '', formatModel(agent.model)].some(
     (value) => value.toLowerCase().includes(keyword)
   );
 };
@@ -72,7 +73,7 @@ export const ContactList = ({
                 <span className={styles.defaultTag}>デフォルト</span>
               )}
             </div>
-            <div className={styles.model}>{agent.model}</div>
+            <div className={styles.model}>{formatModel(agent.model)}</div>
             {agent.description && (
               <div className={styles.description}>{agent.description}</div>
             )}

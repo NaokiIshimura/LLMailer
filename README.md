@@ -127,7 +127,7 @@ npm run dev
 {
   "id": "b6f0…",                          // 追加時にサーバーが採番（手で書く必要はない）
   "name": "myrepo 担当",
-  "model": "opus",                       // opus / sonnet / haiku またはフル名
+  "model": "opus",                       // opus / sonnet / haiku またはフル名（省略すると Claude Code のデフォルト）
   "systemPrompt": "…",                   // --append-system-prompt に渡す役割
   "description": "…",
   "workingDirectory": "../myrepo",        // Claude Code の cwd（相対は本プロジェクトから）

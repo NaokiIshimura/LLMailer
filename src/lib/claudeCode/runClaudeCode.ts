@@ -50,7 +50,12 @@ export const resolveWorkingDirectory = async (
 
 const buildArgs = (input: RunInput): readonly string[] => {
   const { agent, rolePrompt, resumeSessionId, newSessionId } = input;
-  const args = ['-p', '--output-format', 'json', '--model', agent.model];
+  const args = ['-p', '--output-format', 'json'];
+
+  // 未指定なら --model ごと省いて Claude Code のデフォルトに任せる
+  if (agent.model) {
+    args.push('--model', agent.model);
+  }
 
   if (resumeSessionId) {
     args.push('--resume', resumeSessionId);

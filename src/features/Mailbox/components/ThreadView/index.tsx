@@ -29,7 +29,7 @@ interface ThreadViewProps {
   readonly onRetry: (failed: Message) => void;
   /** 再送せずに、返信を得られなかった配信（失敗・中断）を取り消す */
   readonly onDismiss: (unanswered: Message) => void;
-  /** 返信を得られなかった配信の片付け（再送後の削除・取り消し）リクエスト中か */
+  /** 返信を得られなかった配信の取り消しリクエスト中か */
   readonly dismissing: boolean;
   /** 対応中の配信を中断する */
   readonly onCancelDelivery: (pending: Message) => void;

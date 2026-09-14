@@ -205,6 +205,16 @@ export interface Message {
   readonly read: boolean;
   /** status === 'failed' のときの理由 */
   readonly error?: string;
+  /**
+   * この 1 通を元に再送した日時（ISO 8601）。
+   * 失敗・中断は再送しても消さずに残すので、済んだものだと分かるように記録する。
+   */
+  readonly resentAt?: string;
+  /**
+   * 再送せずに取り消した日時（ISO 8601）。
+   * 取り消しても記録は消さない（何があったかを、あとから追えるようにするため）。
+   */
+  readonly dismissedAt?: string;
   readonly usage?: MessageUsage;
   /** Claude Code のセッション ID（次回の --resume に使う） */
   readonly sessionId?: string;
@@ -234,6 +244,17 @@ export const isOutgoingMessage = (message: Pick<Message, 'status'>): boolean =>
 export const isUnansweredMessage = (
   message: Pick<Message, 'status'>
 ): boolean => message.status === 'failed' || message.status === 'canceled';
+
+/**
+ * 再送・取り消しで対応が済んだメッセージか。
+ *
+ * どちらの片付け方でも失敗・中断の 1 通はそのまま残すため、
+ * 記録として残っているだけのものと、未対応の失敗を区別できるようにする。
+ */
+export const isSettledMessage = (
+  message: Pick<Message, 'resentAt' | 'dismissedAt'>
+): boolean =>
+  message.resentAt !== undefined || message.dismissedAt !== undefined;
 
 /** スレッドファイルから導出するスレッド */
 export interface Thread {
@@ -308,6 +329,11 @@ export interface SendMessageRequest {
   readonly threadId?: string;
   readonly inReplyTo?: string;
   readonly draftId?: string;
+  /**
+   * 再送元のメッセージ ID（失敗・中断した 1 通）。
+   * 渡すとその 1 通へ再送した記録を残す（消さずに残すのは、何があったか追えるようにするため）。
+   */
+  readonly resendOf?: string;
 }
 
 /**

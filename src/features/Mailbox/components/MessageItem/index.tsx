@@ -8,6 +8,7 @@ import {
 } from '@/lib/format';
 import {
   isOutgoingMessage,
+  isSettledMessage,
   isUnansweredMessage,
   type Message,
 } from '@/types/mail';
@@ -23,7 +24,7 @@ interface MessageItemProps {
   readonly onRetry?: (message: Message) => void;
   /** 再送せずに、返信を得られなかった配信（失敗・中断）を取り消す */
   readonly onDismiss?: (message: Message) => void;
-  /** 返信を得られなかった配信の片付け（再送後の削除・取り消し）リクエスト中か */
+  /** 返信を得られなかった配信の取り消しリクエスト中か */
   readonly dismissing?: boolean;
   /** 対応中の配信を中断する */
   readonly onCancelDelivery?: (message: Message) => void;
@@ -48,6 +49,9 @@ export const MessageItem = ({
   onOpenFile,
 }: MessageItemProps) => {
   const fromMe = isOutgoingMessage(message);
+  // 再送・取り消しで済んだ失敗・中断は、記録として残すだけで手は加えさせない
+  const settled = isSettledMessage(message);
+  const settledAt = message.resentAt ?? message.dismissedAt;
   // やり取りは「自分 ↔ エージェント」なので、向きだけで差出人と宛先が決まる
   const agents = message.agentIds.map(agentName).join(', ');
   const from = fromMe ? '自分' : agents;
@@ -105,7 +109,7 @@ export const MessageItem = ({
         <div
           className={`${styles.failure} ${
             message.status === 'canceled' ? styles.canceled : ''
-          }`}
+          } ${settled ? styles.settled : ''}`}
         >
           <span className={styles.failureText}>
             <Icon
@@ -116,30 +120,42 @@ export const MessageItem = ({
               ? '中断しました'
               : `失敗しました: ${message.error}`}
           </span>
-          <div className={styles.failureActions}>
-            {onRetry && (
-              <button
-                type="button"
-                className={styles.retryButton}
-                onClick={() => onRetry(message)}
-                disabled={dismissing}
-              >
-                <Icon name="retry" size={13} />
-                再送
-              </button>
-            )}
-            {onDismiss && (
-              <button
-                type="button"
-                className={styles.quietButton}
-                onClick={() => onDismiss(message)}
-                disabled={dismissing}
-              >
-                {dismissing ? <Spinner /> : <Icon name="close" size={13} />}
-                取り消し
-              </button>
-            )}
-          </div>
+          {/*
+            片付けたあとは、どう対応したかの記録だけを残す。
+            何があったのかを読めるようにするためなので、消す手段は出さない。
+          */}
+          {settled ? (
+            <span className={styles.settledNote}>
+              <Icon name={message.resentAt ? 'retry' : 'close'} size={13} />
+              {settledAt && `${formatDateTime(settledAt)} に`}
+              {message.resentAt ? '再送' : '取り消'}しました
+            </span>
+          ) : (
+            <div className={styles.failureActions}>
+              {onRetry && (
+                <button
+                  type="button"
+                  className={styles.retryButton}
+                  onClick={() => onRetry(message)}
+                  disabled={dismissing}
+                >
+                  <Icon name="retry" size={13} />
+                  再送
+                </button>
+              )}
+              {onDismiss && (
+                <button
+                  type="button"
+                  className={styles.quietButton}
+                  onClick={() => onDismiss(message)}
+                  disabled={dismissing}
+                >
+                  {dismissing ? <Spinner /> : <Icon name="close" size={13} />}
+                  取り消し
+                </button>
+              )}
+            </div>
+          )}
         </div>
       ) : message.status === 'pending' ? (
         <div className={styles.pending}>

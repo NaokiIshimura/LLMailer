@@ -89,6 +89,12 @@ src/
   対応中メッセージの ID から `claude` を止められるようにするためで、`next dev` でも
   1 プロセスに 1 つになるよう `globalThis` に持つ。
   **中断された配信の結果は保存しない**（中断 API が書いた「中断」を、あとから上書きしないため）。
+- **再送しても、取り消しても、失敗・中断の 1 通は消さない**。再送は送信リクエストの
+  `resendOf` で再送元を渡して `resentAt` を、取り消しは `POST /api/messages/[id]/dismiss` で
+  `dismissedAt` を書き足す（画面には「〇〇 に再送しました」「〇〇 に取り消しました」と出る）。
+  済んだ失敗なので、一覧の失敗ラベル（`Thread.hasFailure`）と未読からは外し、
+  記録として残すだけにする（片付いた 1 通には再送も取り消しも出さない）。
+  **`DELETE /api/messages/[id]` で消すのは下書きだけ**にする。
 - **スレッド ID はクライアントで決める**。応答を待たずにそのスレッドを開けるようにするため。
 - **`claude` は `spawn`（`shell: false`）で起動し、プロンプトは標準入力から渡す**。
   `--allowedTools` などの可変長オプションは後続の引数を飲み込むため、カンマ区切りの 1 引数で渡す。
@@ -121,10 +127,11 @@ src/
 | GET | `/api/threads?folder=&q=` | スレッド一覧・下書き一覧・未読件数・対応中件数 |
 | GET | `/api/threads/[id]` | スレッド詳細 |
 | PATCH | `/api/threads/[id]` | スレッドを既読にする（`{ "subject": "…" }` で件名変更、`{ "archived": true }` でアーカイブ、`false` で解除） |
-| POST | `/api/messages` | 送信する（配信は待たず、宛先ごとの「対応中」を返す） |
+| POST | `/api/messages` | 送信する（配信は待たず、宛先ごとの「対応中」を返す。`resendOf` で再送元に記録を残す） |
 | POST | `/api/messages/[id]/cancel` | 対応中の配信を中断する（`claude` を止めて「中断」にする） |
+| POST | `/api/messages/[id]/dismiss` | 失敗・中断を再送せずに取り消す（消さずに「取り消し」の記録を残す） |
 | POST | `/api/messages/drafts` | 下書き保存 |
-| DELETE | `/api/messages/[id]` | メッセージ（下書き）削除 |
+| DELETE | `/api/messages/[id]` | 下書き削除（送受信のやり取りは記録として残すので消さない） |
 
 ## コーディング規約
 

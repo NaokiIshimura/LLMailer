@@ -1,6 +1,7 @@
 import type { ThreadRecord } from '@/lib/store/threadRecord';
 import {
   isOutgoingMessage,
+  isSettledMessage,
   type Folder,
   type Message,
   type Thread,
@@ -38,7 +39,10 @@ export const buildThread = (record: ThreadRecord, archived = false): Thread => {
     unreadCount: messages.filter((message) => !message.read).length,
     snippet: toSnippet(latest?.body ?? ''),
     hasPending: messages.some((message) => message.status === 'pending'),
-    hasFailure: messages.some((message) => message.status === 'failed'),
+    // 再送・取り消しで片付いた失敗は、一覧では失敗として扱わない
+    hasFailure: messages.some(
+      (message) => message.status === 'failed' && !isSettledMessage(message)
+    ),
     archived,
   };
 };

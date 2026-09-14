@@ -7,6 +7,7 @@ import { isSafeThreadId } from '@/lib/store/threadFiles';
 import {
   DELIVERY_PROCESS_ID,
   deleteMessage,
+  markMessageAsResent,
   saveMessage,
   saveMessages,
 } from '@/lib/store/messageRepository';
@@ -196,6 +197,11 @@ export const POST = async (request: NextRequest): Promise<NextResponse> => {
 
     if (payload.draftId) {
       await deleteMessage(payload.draftId);
+    }
+
+    // 再送のときは、元の失敗・中断を消さずに「再送した」ことだけを書き足す
+    if (payload.resendOf) {
+      await markMessageAsResent(payload.resendOf, sent.createdAt);
     }
 
     const history = [...previous, sent];

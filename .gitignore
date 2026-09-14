@@ -53,3 +53,5 @@ next-env.d.ts
 /data/threadStates.json.bak
 .env.local
 .claude/
+# claude の起動ラッパー（利用者の環境ごとに中身が変わる）
+/bin/

@@ -27,6 +27,10 @@ Claude API のキーは不要で、すでにログイン済みの Claude Code �
 
 API キーの設定は不要。`claude` が別の場所にある場合は環境変数 `LLMAILER_CLAUDE_BIN` にパスを指定する。
 
+`claude` をシェルの alias や関数（認証情報を注入するラッパーなど）として定義している場合も同じく指定が要る。
+LLMailer は `shell: false` で起動するため alias は展開されず、素の実行ファイルが起動して認証に失敗する。
+alias と同じ処理をするシェルスクリプトを用意し、そのパスを `LLMAILER_CLAUDE_BIN` に指定する。
+
 ## セットアップ
 
 ```bash

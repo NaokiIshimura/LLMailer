@@ -5,6 +5,7 @@ import type {
   ListedAgent,
   UpdateAgentRequest,
 } from '@/types/mail';
+import { collapseHome, resolveStoredPath } from '@/lib/paths';
 import { legacyAddressToAgentId } from './legacy';
 import { readJsonFileIfExists, updateJsonFile } from './jsonFile';
 
@@ -127,13 +128,28 @@ const hasSameName = (
 ): boolean =>
   agents.some((agent) => agent.id !== exceptId && agent.name === name);
 
+/**
+ * 保存した作業ディレクトリを、そのまま `cd` に貼れる形へ直す。
+ *
+ * 保存形は `.` のような相対パスもあり、画面からはどこを指すのか分からない。
+ * ホーム配下は `~` へ畳んで、利用者ごとに違う絶対パスは見せずに済ませる。
+ */
+const toShellPath = (workingDirectory?: string): string =>
+  collapseHome(resolveStoredPath(workingDirectory));
+
+const toListedAgent = (agent: Agent, isDefault: boolean): ListedAgent => ({
+  ...agent,
+  isDefault,
+  resolvedWorkingDirectory: toShellPath(agent.workingDirectory),
+});
+
 /** デフォルトを先、利用者が追加したぶんを後に並べる */
 export const listAgents = async (): Promise<readonly ListedAgent[]> => {
   const defaults = await readAgentFile(DEFAULT_FILE);
   const customs = await readCustomAgents(defaults);
   return [
-    ...defaults.map((agent) => ({ ...agent, isDefault: true })),
-    ...customs.map((agent) => ({ ...agent, isDefault: false })),
+    ...defaults.map((agent) => toListedAgent(agent, true)),
+    ...customs.map((agent) => toListedAgent(agent, false)),
   ];
 };
 

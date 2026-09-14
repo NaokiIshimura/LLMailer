@@ -104,6 +104,14 @@ export const Mailbox = () => {
     [agents.agents]
   );
 
+  /** 作業ディレクトリの保存形は `.` や `~` なので、サーバーが直した形を使う */
+  const agentDirectory = useCallback(
+    (agentId: string): string | undefined =>
+      agents.agents.find((agent) => agent.id === agentId)
+        ?.resolvedWorkingDirectory,
+    [agents.agents]
+  );
+
   const selectedAgent =
     agents.agents.find((agent) => agent.id === selectedAgentId) ??
     agents.agents[0] ??
@@ -639,6 +647,7 @@ export const Mailbox = () => {
               // 保存前のスレッドを取得しに行くと 404 になるため、表示できているうちは伏せる
               error={shownMessages.length > 0 ? null : detail.error}
               agentName={agentName}
+              agentDirectory={agentDirectory}
               onReply={handleReply}
               onMarkRead={detail.markRead}
               onRetry={handleRetry}

@@ -109,6 +109,9 @@ src/
   効かないので、保存した値を使うときは必ず `lib/paths.ts` の `resolveStoredPath` を通す。
   ディレクトリ選択で保存する値も、プロジェクト配下は相対パス・ホーム配下は `~` に畳み、
   利用者ごとに違う絶対パスを残さない。追加フォームの初期値も `~` にしてある。
+- **セッションを開き直すコマンドは、一覧が返す `resolvedWorkingDirectory` から組み立てる**。
+  保存形は `.` や `~` なので、そのままでは `cd` に渡せない。絶対パスは保存せず、
+  一覧を返すときだけ `isDefault` と同じように付ける。
 - **読み取り専用エージェントは `disallowedTools` + `settingSources` から `user` を外す**ことで実現する。
   `allowedTools` だけではグローバルの `permissions.allow` を打ち消せない。
 

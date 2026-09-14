@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { access } from 'node:fs/promises';
-import path from 'node:path';
+import { resolveStoredPath } from '@/lib/paths';
 import type { Agent } from '@/types/mail';
 import { isClaudeCodeResult, type ClaudeCodeResult } from './types';
 
@@ -37,7 +37,7 @@ export class ClaudeCodeError extends Error {
 export const resolveWorkingDirectory = async (
   agent: Agent
 ): Promise<string> => {
-  const resolved = path.resolve(process.cwd(), agent.workingDirectory ?? '.');
+  const resolved = resolveStoredPath(agent.workingDirectory);
 
   try {
     await access(resolved);

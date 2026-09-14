@@ -23,13 +23,15 @@ export interface AgentForm {
   readonly timeoutSeconds: string;
 }
 
+// モデルは未指定で始める（選ばなければ Claude Code のデフォルトに任せる）。
+// 作業ディレクトリはホームから選び直してもらう前提で `~` にしてある。
 const EMPTY_FORM: AgentForm = {
   editing: null,
   name: '',
-  model: 'opus',
+  model: '',
   description: '',
   systemPrompt: '',
-  workingDirectory: '.',
+  workingDirectory: '~',
   access: 'readOnly',
   timeoutSeconds: '',
 };

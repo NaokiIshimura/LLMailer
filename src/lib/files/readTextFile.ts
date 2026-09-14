@@ -1,5 +1,6 @@
 import { readFile, realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
+import { expandHome, resolveStoredPath } from '@/lib/paths';
 import { isViewablePath, type FileContent } from './types';
 
 /** ファイルを読めなかったことを表すエラー */
@@ -63,8 +64,8 @@ export const readTextFile = async (
     );
   }
 
-  const base = path.resolve(process.cwd(), baseDirectory ?? '.');
-  const resolved = path.resolve(base, target.replace(/^~(?=\/|$)/, ''));
+  const base = resolveStoredPath(baseDirectory);
+  const resolved = path.resolve(base, expandHome(target));
   const real = await toRealPath(resolved);
 
   const roots = [process.cwd(), base];

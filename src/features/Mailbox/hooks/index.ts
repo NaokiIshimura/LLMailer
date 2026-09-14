@@ -8,6 +8,10 @@ export {
   useArchiveThread,
   type UseArchiveThreadResult,
 } from './useArchiveThread';
+export {
+  useCancelDelivery,
+  type UseCancelDeliveryResult,
+} from './useCancelDelivery';
 export { useCompose, type ComposeDraft, type UseComposeResult } from './useCompose';
 export {
   useComposeKeyboard,

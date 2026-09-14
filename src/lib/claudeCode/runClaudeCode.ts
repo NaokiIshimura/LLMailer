@@ -21,6 +21,8 @@ export interface RunInput {
   readonly resumeSessionId?: string;
   /** 新規セッションに割り当てる ID */
   readonly newSessionId: string;
+  /** 実行中の中断を受け取る合図（利用者が対応中を止めたときに発火する） */
+  readonly signal?: AbortSignal;
 }
 
 /** 実行に失敗したことを表すエラー */
@@ -96,15 +98,30 @@ interface SpawnOutcome {
   readonly stdout: string;
   readonly stderr: string;
   readonly timedOut: boolean;
+  /** 利用者の操作で止めたか */
+  readonly aborted: boolean;
 }
 
 const spawnClaude = (
   args: readonly string[],
   prompt: string,
   cwd: string,
-  timeoutMs: number
+  timeoutMs: number,
+  signal?: AbortSignal
 ): Promise<SpawnOutcome> =>
   new Promise((resolve, reject) => {
+    // 起動前に中断されていたら、そもそも動かさない（abort イベントはもう発火しない）
+    if (signal?.aborted) {
+      resolve({
+        code: null,
+        stdout: '',
+        stderr: '',
+        timedOut: false,
+        aborted: true,
+      });
+      return;
+    }
+
     // shell: false（既定）で起動し、プロンプトは標準入力から渡す
     const child = spawn(CLAUDE_BIN, [...args], {
       cwd,
@@ -115,12 +132,26 @@ const spawnClaude = (
     let stdout = '';
     let stderr = '';
     let timedOut = false;
+    let graceTimer: NodeJS.Timeout | undefined;
+
+    /** SIGTERM で終わらなければ強制終了する（タイムアウトと中断で止め方を揃える） */
+    const stop = () => {
+      child.kill('SIGTERM');
+      graceTimer = setTimeout(() => child.kill('SIGKILL'), KILL_GRACE_MS);
+    };
 
     const killTimer = setTimeout(() => {
       timedOut = true;
-      child.kill('SIGTERM');
-      setTimeout(() => child.kill('SIGKILL'), KILL_GRACE_MS);
+      stop();
     }, timeoutMs);
+
+    signal?.addEventListener('abort', stop, { once: true });
+
+    const cleanUp = () => {
+      clearTimeout(killTimer);
+      clearTimeout(graceTimer);
+      signal?.removeEventListener('abort', stop);
+    };
 
     child.stdout.setEncoding('utf-8');
     child.stdout.on('data', (chunk: string) => {
@@ -132,7 +163,7 @@ const spawnClaude = (
     });
 
     child.on('error', (error: NodeJS.ErrnoException) => {
-      clearTimeout(killTimer);
+      cleanUp();
       if (error.code === 'ENOENT') {
         reject(
           new ClaudeCodeError(
@@ -150,8 +181,14 @@ const spawnClaude = (
     });
 
     child.on('close', (code) => {
-      clearTimeout(killTimer);
-      resolve({ code, stdout, stderr, timedOut });
+      cleanUp();
+      resolve({
+        code,
+        stdout,
+        stderr,
+        timedOut,
+        aborted: signal?.aborted ?? false,
+      });
     });
 
     child.stdin.end(prompt, 'utf-8');
@@ -216,8 +253,14 @@ export const runClaudeCode = async (
     buildArgs(input),
     input.prompt,
     cwd,
-    timeoutMs
+    timeoutMs,
+    input.signal
   );
+
+  // 中断は利用者が止めたということなので、異常終了として扱わない
+  if (outcome.aborted) {
+    throw new ClaudeCodeError('配信を中断しました。');
+  }
 
   if (outcome.timedOut) {
     throw new ClaudeCodeError(

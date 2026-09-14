@@ -2,6 +2,7 @@
 
 import { Fragment, useRef, useState } from 'react';
 import {
+  isUnansweredMessage,
   THREAD_SUBJECT_MAX_LENGTH,
   type Message,
   type Thread,
@@ -26,10 +27,14 @@ interface ThreadViewProps {
   /** 届いたことに気づいた返信を既読にする */
   readonly onMarkRead: () => void;
   readonly onRetry: (failed: Message) => void;
-  /** 再送せずに失敗した配信を取り消す */
-  readonly onCancelFailure: (failed: Message) => void;
-  /** 失敗した配信の片付け（再送後の削除・取り消し）リクエスト中か */
+  /** 再送せずに、返信を得られなかった配信（失敗・中断）を取り消す */
+  readonly onDismiss: (unanswered: Message) => void;
+  /** 返信を得られなかった配信の片付け（再送後の削除・取り消し）リクエスト中か */
   readonly dismissing: boolean;
+  /** 対応中の配信を中断する */
+  readonly onCancelDelivery: (pending: Message) => void;
+  /** 中断リクエスト中か */
+  readonly canceling: boolean;
   /** 対応が済んだスレッドを片付ける（アーカイブ済みなら解除する） */
   readonly onArchive: (archived: boolean) => void;
   /** アーカイブの切り替えリクエスト中か */
@@ -53,8 +58,10 @@ export const ThreadView = ({
   onReply,
   onMarkRead,
   onRetry,
-  onCancelFailure,
+  onDismiss,
   dismissing,
+  onCancelDelivery,
+  canceling,
   onArchive,
   archiving,
   onRename,
@@ -246,7 +253,7 @@ export const ThreadView = ({
       )}
 
       <div className={styles.messages}>
-        {/* 対応中の返信もメッセージの 1 通として並ぶ（MessageItem が表示を切り替える） */}
+        {/* 対応中・中断の返信もメッセージの 1 通として並ぶ（MessageItem が表示を切り替える） */}
         {exchanges.map((exchange) => (
           <Fragment key={exchange[0].id}>
             {exchange.map((message) => (
@@ -254,11 +261,15 @@ export const ThreadView = ({
                 key={message.id}
                 message={message}
                 agentName={agentName}
-                onRetry={message.status === 'failed' ? onRetry : undefined}
-                onCancel={
-                  message.status === 'failed' ? onCancelFailure : undefined
+                onRetry={isUnansweredMessage(message) ? onRetry : undefined}
+                onDismiss={
+                  isUnansweredMessage(message) ? onDismiss : undefined
                 }
                 dismissing={dismissing}
+                onCancelDelivery={
+                  message.status === 'pending' ? onCancelDelivery : undefined
+                }
+                canceling={canceling}
                 onOpenFile={onOpenFile}
               />
             ))}

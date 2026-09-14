@@ -185,6 +185,26 @@ const parseResult = (stdout: string): ClaudeCodeResult => {
   }
 };
 
+/**
+ * 異常終了したときの原因を取り出す。
+ *
+ * `--output-format json` は異常終了でも result にエラー本文を入れて返すため、
+ * JSON をそのまま切り詰めず result を優先する（切り詰めると原因が落ちる）。
+ */
+const extractFailureDetail = (outcome: SpawnOutcome): string => {
+  try {
+    const result = parseResult(outcome.stdout);
+    const detail = (result.result ?? result.subtype ?? '').trim();
+    if (detail) {
+      return detail;
+    }
+  } catch {
+    // JSON として読めなければ生の出力から拾う
+  }
+
+  return outcome.stderr.trim() || outcome.stdout.trim();
+};
+
 /** ローカルの Claude Code を 1 回実行する */
 export const runClaudeCode = async (
   input: RunInput
@@ -206,7 +226,7 @@ export const runClaudeCode = async (
   }
 
   if (outcome.code !== 0) {
-    const detail = outcome.stderr.trim() || outcome.stdout.trim();
+    const detail = extractFailureDetail(outcome);
     throw new ClaudeCodeError(
       `claude が異常終了しました（exit ${outcome.code ?? '不明'}）: ${
         detail.slice(0, 500) || '詳細なし'

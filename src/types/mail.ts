@@ -62,11 +62,17 @@ export interface Agent {
  * 一覧で返すエージェント。
  *
  * デフォルトかどうかは data/agents/default.json に入っているかで決まり、
- * このファイルはサーバーでしか読めない。画面から見分けられるよう、
- * 一覧を返すときにサーバーが付ける（保存する値ではない）。
+ * このファイルはサーバーでしか読めない。作業ディレクトリの保存形も
+ * `.` や `~` を含みそのままでは使えないため、どちらも一覧を返すときに
+ * サーバーが付ける（保存する値ではない）。
  */
 export interface ListedAgent extends Agent {
   readonly isDefault: boolean;
+  /**
+   * そのまま `cd` に渡せる作業ディレクトリ。
+   * 相対パスは解決し、ホーム配下は `~` に畳んである。
+   */
+  readonly resolvedWorkingDirectory: string;
 }
 
 /** 読み取り専用エージェントに許可するツール */

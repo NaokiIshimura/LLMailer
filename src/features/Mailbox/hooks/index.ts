@@ -22,6 +22,7 @@ export {
   type ResizeAxis,
   type UseComposeSizeResult,
 } from './useComposeSize';
+export { useCopyText, type UseCopyTextResult } from './useCopyText';
 export {
   useDeleteMessage,
   type UseDeleteMessageResult,

@@ -23,6 +23,8 @@ interface ThreadViewProps {
   readonly error: string | null;
   /** エージェント ID → 表示名 */
   readonly agentName: (agentId: string) => string;
+  /** エージェント ID → `cd` に渡せる作業ディレクトリ */
+  readonly agentDirectory: (agentId: string) => string | undefined;
   readonly onReply: () => void;
   /** 届いたことに気づいた返信を既読にする */
   readonly onMarkRead: () => void;
@@ -55,6 +57,7 @@ export const ThreadView = ({
   loading,
   error,
   agentName,
+  agentDirectory,
   onReply,
   onMarkRead,
   onRetry,
@@ -261,6 +264,7 @@ export const ThreadView = ({
                 key={message.id}
                 message={message}
                 agentName={agentName}
+                agentDirectory={agentDirectory}
                 onRetry={isUnansweredMessage(message) ? onRetry : undefined}
                 onDismiss={
                   isUnansweredMessage(message) ? onDismiss : undefined

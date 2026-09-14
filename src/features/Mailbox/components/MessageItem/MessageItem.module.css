@@ -173,3 +173,33 @@
   color: var(--color-text-muted);
   font-size: 12px;
 }
+
+/* メタ情報の先頭（受信バッジの左）に並ぶので、押せると分かる最小限の見た目に留める */
+.copyButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.copyButton:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* コピーできなかったときだけ出す。選んで写せるよう、折り返して全文を見せる */
+.resumeCommand {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  background: var(--color-surface-muted);
+  border-radius: var(--radius);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}

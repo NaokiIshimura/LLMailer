@@ -12,6 +12,8 @@ import {
   isUnansweredMessage,
   type Message,
 } from '@/types/mail';
+import { buildResumeCommand } from '@/lib/resumeCommand';
+import { useCopyText } from '../../hooks';
 import { Icon } from '../Icon';
 import { Spinner } from '../Loader';
 import { MarkdownBody } from '../MarkdownBody';
@@ -31,6 +33,11 @@ interface MessageItemProps {
   /** 中断リクエスト中か */
   readonly canceling?: boolean;
   /**
+   * エージェント ID → `cd` に渡せる作業ディレクトリ。
+   * セッションを開き直すコマンドの組み立てに使う（見つからなければ undefined）。
+   */
+  readonly agentDirectory?: (agentId: string) => string | undefined;
+  /**
    * 本文に書かれたファイルパスを開く。
    * 相対パスの基準になるエージェントも一緒に渡す。
    */
@@ -46,6 +53,7 @@ export const MessageItem = ({
   dismissing = false,
   onCancelDelivery,
   canceling = false,
+  agentDirectory,
   onOpenFile,
 }: MessageItemProps) => {
   const fromMe = isOutgoingMessage(message);
@@ -58,6 +66,17 @@ export const MessageItem = ({
   const to = fromMe ? agents : '自分';
   // 本文のパスは、やり取りしているエージェントの作業ディレクトリから辿る
   const baseAgentId = message.agentIds[0];
+  const copier = useCopyText();
+  /*
+    返信は Claude Code のセッションに残っているので、手元のターミナルから
+    続きを開けるようにする。セッションは作業ディレクトリごとに分かれているため、
+    ID だけでなく cd も一緒に組み立てる。
+  */
+  const workingDirectory = agentDirectory?.(baseAgentId);
+  const resumeCommand =
+    message.sessionId && workingDirectory
+      ? buildResumeCommand(workingDirectory, message.sessionId)
+      : undefined;
 
   return (
     <article
@@ -74,6 +93,17 @@ export const MessageItem = ({
           )}
         </div>
         <div className={styles.meta}>
+          {resumeCommand && (
+            <button
+              type="button"
+              className={styles.copyButton}
+              onClick={() => void copier.copy(resumeCommand)}
+              title={`ターミナルで続きを開く: ${resumeCommand}`}
+            >
+              <Icon name={copier.copied ? 'check' : 'copy'} size={13} />
+              {copier.copied ? 'コピーしました' : '復元コマンド'}
+            </button>
+          )}
           <span
             className={`${styles.badge} ${
               fromMe ? styles.sentBadge : styles.receivedBadge
@@ -103,6 +133,13 @@ export const MessageItem = ({
           </time>
         </div>
       </header>
+
+      {/* クリップボードを触れない環境向けに、手で選べる形でも出す */}
+      {resumeCommand && copier.failed && (
+        <p className={styles.resumeCommand}>
+          <code>{resumeCommand}</code>
+        </p>
+      )}
 
       {isUnansweredMessage(message) ? (
         /* 失敗も中断も本文が無いまま残るので、同じ形で理由と片付け方を出す */

@@ -29,7 +29,21 @@ API キーの設定は不要。`claude` が別の場所にある場合は環境�
 
 `claude` をシェルの alias や関数（認証情報を注入するラッパーなど）として定義している場合も同じく指定が要る。
 LLMailer は `shell: false` で起動するため alias は展開されず、素の実行ファイルが起動して認証に失敗する。
-alias と同じ処理をするシェルスクリプトを用意し、そのパスを `LLMAILER_CLAUDE_BIN` に指定する。
+alias と同じ処理をするシェルスクリプトを `bin/` に置き、そのパスを `LLMAILER_CLAUDE_BIN` に指定する。
+
+```sh
+# bin/llmailer-claude
+#!/bin/sh
+exec <alias と同じコマンド> -- /path/to/claude "$@"
+```
+
+```bash
+chmod +x bin/llmailer-claude
+echo "LLMAILER_CLAUDE_BIN=$PWD/bin/llmailer-claude" >> .env.local
+```
+
+`bin/` は `.gitignore` 済み。ラッパーの中身は環境ごとに変わるのでコミットしない。
+`LLMAILER_CLAUDE_BIN` は**絶対パス**で指定する（`claude` はエージェントの作業ディレクトリで起動するため、相対パスだと解決できない）。
 
 ## セットアップ
 

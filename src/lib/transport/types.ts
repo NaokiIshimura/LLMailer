@@ -16,6 +16,8 @@ export interface DeliverInput {
   readonly resumeSessionId?: string;
   /** 同席している他エージェントの表示名（エージェント ID → 名前） */
   readonly agentNames: ReadonlyMap<string, string>;
+  /** 配信を途中で止める合図（利用者が対応中を中断したときに発火する） */
+  readonly signal?: AbortSignal;
 }
 
 export interface DeliverResult {

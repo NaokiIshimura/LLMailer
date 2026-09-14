@@ -147,6 +147,39 @@ export const deleteMessage = async (id: string): Promise<boolean> => {
 };
 
 /**
+ * 対応中のメッセージを中断にする。
+ *
+ * 配信そのものを止めるのは呼び出し側の仕事で、ここでは
+ * 「返信を得られないまま終わった」ことだけを残す。
+ * すでに返信が届いている・見つからないときは false。
+ */
+export const cancelPendingMessage = async (id: string): Promise<boolean> => {
+  await ensureMigrated();
+  const location = await findMessageLocation(id);
+  // 下書きは配信しないので、対応中になることもない
+  if (!location || location.kind === 'draft') {
+    return false;
+  }
+
+  return updateThreadRecord(location.threadId, (record) => {
+    let canceled = false;
+    const messages = record.messages.map((message) => {
+      if (message.id !== id || message.status !== 'pending') {
+        return message;
+      }
+      canceled = true;
+      return {
+        ...message,
+        status: 'canceled' as const,
+        // 配信の担当はもう居ないので落とす（undefined は JSON に残らない）
+        deliveryProcessId: undefined,
+      };
+    });
+    return { next: { ...record, messages }, result: canceled };
+  });
+};
+
+/**
  * 前のプロセスが残した対応中メッセージを配信失敗にする。
  *
  * 配信していたプロセスが消えた以上、返信は永遠に届かないため、

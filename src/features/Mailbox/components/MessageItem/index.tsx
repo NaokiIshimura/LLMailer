@@ -6,7 +6,11 @@ import {
   formatDuration,
   formatTokens,
 } from '@/lib/format';
-import { isOutgoingMessage, type Message } from '@/types/mail';
+import {
+  isOutgoingMessage,
+  isUnansweredMessage,
+  type Message,
+} from '@/types/mail';
 import { Icon } from '../Icon';
 import { Spinner } from '../Loader';
 import { MarkdownBody } from '../MarkdownBody';
@@ -17,10 +21,14 @@ interface MessageItemProps {
   /** エージェント ID → 表示名 */
   readonly agentName: (agentId: string) => string;
   readonly onRetry?: (message: Message) => void;
-  /** 再送せずに失敗した配信を取り消す */
-  readonly onCancel?: (message: Message) => void;
-  /** 失敗した配信の片付け（再送後の削除・取り消し）リクエスト中か */
+  /** 再送せずに、返信を得られなかった配信（失敗・中断）を取り消す */
+  readonly onDismiss?: (message: Message) => void;
+  /** 返信を得られなかった配信の片付け（再送後の削除・取り消し）リクエスト中か */
   readonly dismissing?: boolean;
+  /** 対応中の配信を中断する */
+  readonly onCancelDelivery?: (message: Message) => void;
+  /** 中断リクエスト中か */
+  readonly canceling?: boolean;
   /**
    * 本文に書かれたファイルパスを開く。
    * 相対パスの基準になるエージェントも一緒に渡す。
@@ -33,8 +41,10 @@ export const MessageItem = ({
   message,
   agentName,
   onRetry,
-  onCancel,
+  onDismiss,
   dismissing = false,
+  onCancelDelivery,
+  canceling = false,
   onOpenFile,
 }: MessageItemProps) => {
   const fromMe = isOutgoingMessage(message);
@@ -90,11 +100,21 @@ export const MessageItem = ({
         </div>
       </header>
 
-      {message.status === 'failed' ? (
-        <div className={styles.failure}>
+      {isUnansweredMessage(message) ? (
+        /* 失敗も中断も本文が無いまま残るので、同じ形で理由と片付け方を出す */
+        <div
+          className={`${styles.failure} ${
+            message.status === 'canceled' ? styles.canceled : ''
+          }`}
+        >
           <span className={styles.failureText}>
-            <Icon name="warning" size={15} />
-            失敗しました: {message.error}
+            <Icon
+              name={message.status === 'canceled' ? 'close' : 'warning'}
+              size={15}
+            />
+            {message.status === 'canceled'
+              ? '中断しました'
+              : `失敗しました: ${message.error}`}
           </span>
           <div className={styles.failureActions}>
             {onRetry && (
@@ -108,23 +128,37 @@ export const MessageItem = ({
                 再送
               </button>
             )}
-            {onCancel && (
+            {onDismiss && (
               <button
                 type="button"
-                className={styles.cancelButton}
-                onClick={() => onCancel(message)}
+                className={styles.quietButton}
+                onClick={() => onDismiss(message)}
                 disabled={dismissing}
               >
                 {dismissing ? <Spinner /> : <Icon name="close" size={13} />}
-                キャンセル
+                取り消し
               </button>
             )}
           </div>
         </div>
       ) : message.status === 'pending' ? (
-        <p className={styles.pending}>
-          <Spinner /> 対応中…
-        </p>
+        <div className={styles.pending}>
+          <span className={styles.pendingText}>
+            <Spinner /> 対応中…
+          </span>
+          {/* 配信はサーバー側で続いているので、止められるのもサーバーだけ */}
+          {onCancelDelivery && (
+            <button
+              type="button"
+              className={styles.quietButton}
+              onClick={() => onCancelDelivery(message)}
+              disabled={canceling}
+            >
+              {canceling ? <Spinner /> : <Icon name="close" size={13} />}
+              中断
+            </button>
+          )}
+        </div>
       ) : (
         <>
           <div className={styles.body}>

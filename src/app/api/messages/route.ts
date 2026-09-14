@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { after, NextResponse, type NextRequest } from 'next/server';
 import { errorResponse, unexpectedErrorResponse } from '@/lib/api/response';
+import { finishDelivery, registerDelivery } from '@/lib/delivery/registry';
 import { listAgents } from '@/lib/store/agentRepository';
 import { isSafeThreadId } from '@/lib/store/threadFiles';
 import {
@@ -69,7 +70,8 @@ const deliverTo = async (
   sent: Message,
   pending: Message,
   history: readonly Message[],
-  agentNames: ReadonlyMap<string, string>
+  agentNames: ReadonlyMap<string, string>,
+  signal: AbortSignal
 ): Promise<Message> => {
   const isFromThisAgent = (message: Message): boolean =>
     !isOutgoingMessage(message) && message.agentIds[0] === agent.id;
@@ -103,6 +105,7 @@ const deliverTo = async (
       isFirstTurn: lastReply === undefined,
       resumeSessionId: lastReply?.sessionId,
       agentNames,
+      signal,
     });
 
     return {
@@ -119,7 +122,10 @@ const deliverTo = async (
       error instanceof DeliveryError
         ? error.message
         : '原因不明のエラーで失敗しました。';
-    console.error('[llmailer] deliver failed', agent.id, error);
+    // 中断は利用者が止めたものなので、配信の失敗としては記録しない
+    if (!signal.aborted) {
+      console.error('[llmailer] deliver failed', agent.id, error);
+    }
 
     return {
       ...base,
@@ -199,17 +205,28 @@ export const POST = async (request: NextRequest): Promise<NextResponse> => {
       // 宛先ごとに並行配信し、届いた順に保存する（1 件の遅れが他を待たせない）
       await Promise.all(
         knownRecipients.map(async (agent, index) => {
+          const placeholder = pending[index];
+          // 配信しているあいだは、中断の合図を引けるようにしておく
+          const controller = registerDelivery(placeholder.id);
+
           try {
             const reply = await deliverTo(
               agent,
               sent,
-              pending[index],
+              placeholder,
               history,
-              agentNames
+              agentNames,
+              controller.signal
             );
+            // 中断されたぶんは保存しない（中断した時点で「中断」が保存されている）
+            if (controller.signal.aborted) {
+              return;
+            }
             await saveMessage(reply);
           } catch (error) {
             console.error('[llmailer] 配信結果の保存に失敗しました', agent.id, error);
+          } finally {
+            finishDelivery(placeholder.id);
           }
         })
       );

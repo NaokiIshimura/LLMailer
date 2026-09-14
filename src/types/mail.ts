@@ -157,7 +157,9 @@ export type MessageStatus =
   /** 受信（エージェントの応答） */
   | 'received'
   /** 配信失敗 */
-  | 'failed';
+  | 'failed'
+  /** 中断（対応中の配信を利用者が止めた） */
+  | 'canceled';
 
 /** トークン使用量 */
 export interface MessageUsage {
@@ -219,6 +221,16 @@ export interface Message {
  */
 export const isOutgoingMessage = (message: Pick<Message, 'status'>): boolean =>
   message.status === 'draft' || message.status === 'sent';
+
+/**
+ * 返信を得られないまま終わったメッセージか。
+ *
+ * 配信失敗と中断はどちらも本文が無いまま残るため、
+ * 同じように再送・取り消しができるようにする。
+ */
+export const isUnansweredMessage = (
+  message: Pick<Message, 'status'>
+): boolean => message.status === 'failed' || message.status === 'canceled';
 
 /** スレッドファイルから導出するスレッド */
 export interface Thread {

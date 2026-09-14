@@ -96,7 +96,7 @@
 }
 
 .retryButton,
-.cancelButton {
+.quietButton {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -110,22 +110,44 @@
   font-weight: 600;
 }
 
-/* 取り消しは失敗を消すだけなので、再送より控えめに見せる */
-.cancelButton {
+/* 取り消しと中断は失敗の再送より控えめに見せる */
+.quietButton {
   border-color: var(--color-border);
   color: var(--color-text-muted);
 }
 
 .retryButton:disabled,
-.cancelButton:disabled {
+.quietButton:disabled {
   opacity: 0.6;
 }
 
+/* 中断は利用者が止めたものなので、失敗と同じ形でも色は落として出す */
+.canceled {
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+}
+
+.canceled .retryButton {
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+/* 対応中も、返信が入る場所に同じ形で出し、中断を右端に置く */
 .pending {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--color-surface-muted);
+  border-radius: var(--radius);
   color: var(--color-text-muted);
+}
+
+.pendingText {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .denied {

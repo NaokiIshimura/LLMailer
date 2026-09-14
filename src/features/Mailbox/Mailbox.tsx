@@ -33,6 +33,7 @@ import {
   useAgentEditor,
   useAgents,
   useArchiveThread,
+  useCancelDelivery,
   useCompose,
   useDeleteMessage,
   useFileViewer,
@@ -70,9 +71,11 @@ export const Mailbox = () => {
     threadPaneVisible
   );
   const sender = useSendMessage();
-  /** 失敗した返信を消すためのもの（再送後の片付けと、再送しない取り消しで使う） */
+  /** 返信を得られなかった通を消すためのもの（再送後の片付けと、再送しない取り消しで使う） */
   const failureDeleter = useDeleteMessage();
   const draftDeleter = useDeleteMessage();
+  /** 対応中の配信の中断 */
+  const canceler = useCancelDelivery();
   /** 対応が済んだスレッドの片付け（アーカイブと、その解除） */
   const archiver = useArchiveThread();
   /** スレッドのお題の変更 */
@@ -269,31 +272,39 @@ export const Mailbox = () => {
   }, [compose, detail, sender, threads]);
 
   /**
-   * 配信に失敗した返信そのものを消す。
+   * 送信直後の控えから 1 通を外す。
    *
-   * 「失敗しました」の行も一覧の失敗ラベルも、この 1 通だけが根拠なので、
+   * 控えに残っていると、消したはずのものが「対応中」として戻ってしまう。
+   */
+  const forgetRecentPending = useCallback((messageId: string) => {
+    setRecentSend((current) =>
+      current
+        ? {
+            ...current,
+            pending: current.pending.filter(
+              (message) => message.id !== messageId
+            ),
+          }
+        : current
+    );
+  }, []);
+
+  /**
+   * 返信を得られなかった返信そのものを消す。
+   *
+   * 「失敗しました」「中断しました」の行も一覧の失敗ラベルも、この 1 通だけが根拠なので、
    * 消せば再送・取り消しのボタンもラベルも残らない。
    */
-  const dismissFailure = useCallback(
-    async (failed: Message): Promise<boolean> => {
-      if (!(await failureDeleter.remove(failed.id))) {
+  const dismissMessage = useCallback(
+    async (unanswered: Message): Promise<boolean> => {
+      if (!(await failureDeleter.remove(unanswered.id))) {
         return false;
       }
 
-      // 送信直後の控えに残っていると「対応中」として戻ってしまうため、そこからも外す
-      setRecentSend((current) =>
-        current
-          ? {
-              ...current,
-              pending: current.pending.filter(
-                (message) => message.id !== failed.id
-              ),
-            }
-          : current
-      );
+      forgetRecentPending(unanswered.id);
       return true;
     },
-    [failureDeleter]
+    [failureDeleter, forgetRecentPending]
   );
 
   /** 配信に失敗した返信を、元の送信内容でもう一度配信する */
@@ -318,26 +329,53 @@ export const Mailbox = () => {
         return;
       }
 
-      // 再送したからには、もう済んだ失敗を残さない
-      await dismissFailure(failed);
+      // 再送したからには、もう済んだ失敗・中断を残さない
+      await dismissMessage(failed);
       setRecentSend(result);
       threads.reload();
       detail.reload();
     },
-    [detail, dismissFailure, sender, shownMessages, threads]
+    [detail, dismissMessage, sender, shownMessages, threads]
   );
 
-  /** 配信に失敗した返信を、再送せずに取り消す */
-  const handleCancelFailure = useCallback(
-    async (failed: Message) => {
-      if (!(await dismissFailure(failed))) {
+  /** 返信を得られなかった返信を、再送せずに取り消す */
+  const handleDismiss = useCallback(
+    async (unanswered: Message) => {
+      if (!(await dismissMessage(unanswered))) {
         return;
       }
 
       threads.reload();
       detail.reload();
     },
-    [detail, dismissFailure, threads]
+    [detail, dismissMessage, threads]
+  );
+
+  /**
+   * 対応中の配信を中断する。
+   *
+   * 作業中のエージェントを途中で止めることになるので、一度だけ確かめる。
+   * 中断した 1 通は「中断しました」として残るため、直してから再送できる。
+   */
+  const handleCancelDelivery = useCallback(
+    async (pendingMessage: Message) => {
+      const agents = pendingMessage.agentIds.map(agentName).join(', ');
+      const confirmed = window.confirm(
+        `${agents}の対応を中断しますか？\n途中まで進んだ作業は元に戻りません。`
+      );
+      if (!confirmed) {
+        return;
+      }
+
+      if (!(await canceler.cancel(pendingMessage.id))) {
+        return;
+      }
+
+      forgetRecentPending(pendingMessage.id);
+      threads.reload();
+      detail.reload();
+    },
+    [agentName, canceler, detail, forgetRecentPending, threads]
   );
 
   /**
@@ -497,6 +535,7 @@ export const Mailbox = () => {
       {failureDeleter.error && (
         <p className={styles.notice}>{failureDeleter.error}</p>
       )}
+      {canceler.error && <p className={styles.notice}>{canceler.error}</p>}
       {draftDeleter.error && (
         <p className={styles.notice}>{draftDeleter.error}</p>
       )}
@@ -613,8 +652,10 @@ export const Mailbox = () => {
               onReply={handleReply}
               onMarkRead={detail.markRead}
               onRetry={handleRetry}
-              onCancelFailure={handleCancelFailure}
+              onDismiss={handleDismiss}
               dismissing={failureDeleter.deleting}
+              onCancelDelivery={handleCancelDelivery}
+              canceling={canceler.canceling}
               onArchive={(archived) => {
                 if (shownThread) {
                   void handleArchive(shownThread.id, archived);

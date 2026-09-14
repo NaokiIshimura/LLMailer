@@ -38,8 +38,15 @@ const toRunInfo = (result: ClaudeCodeResult): RunInfo => {
 /** ローカルの Claude Code へメッセージを配信する Transport 実装 */
 export const claudeCodeTransport: Transport = {
   async deliver(input: DeliverInput): Promise<DeliverResult> {
-    const { agent, subject, newMessages, isFirstTurn, resumeSessionId, agentNames } =
-      input;
+    const {
+      agent,
+      subject,
+      newMessages,
+      isFirstTurn,
+      resumeSessionId,
+      agentNames,
+      signal,
+    } = input;
 
     const prompt = buildPrompt({
       newMessages,
@@ -61,6 +68,7 @@ export const claudeCodeTransport: Transport = {
         rolePrompt: buildRolePrompt(agent, subject),
         resumeSessionId,
         newSessionId,
+        signal,
       });
 
       const body = (result.result ?? '').trim();

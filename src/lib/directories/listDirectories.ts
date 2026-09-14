@@ -1,6 +1,7 @@
 import { readdir, stat } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { collapseHome, resolveStoredPath } from '@/lib/paths';
 import type { DirectoryEntry, DirectoryListing } from './types';
 
 /** ディレクトリを読めなかったことを表すエラー */
@@ -17,8 +18,9 @@ export class DirectoryError extends Error {
 /**
  * 絶対パスを保存用の値に直す。
  *
- * プロジェクト配下は相対パスのまま持つ（agents.json を別マシンへ持って
- * いっても動くようにするため）。外を指しているときだけ絶対パスにする。
+ * プロジェクト配下は相対パス、ホーム配下は `~` 表記のまま持つ
+ * （agents.json を別マシンへ持っていっても動くようにするため）。
+ * どちらでもないときだけ絶対パスにする。
  */
 export const toStoredValue = (absolute: string): string => {
   const relative = path.relative(process.cwd(), absolute);
@@ -26,7 +28,7 @@ export const toStoredValue = (absolute: string): string => {
     return '.';
   }
   return relative.startsWith('..') || path.isAbsolute(relative)
-    ? absolute
+    ? collapseHome(absolute)
     : relative;
 };
 
@@ -70,7 +72,7 @@ const toDirectoryEntry = async (
 export const listDirectories = async (
   target?: string
 ): Promise<DirectoryListing> => {
-  const resolved = path.resolve(process.cwd(), target ?? '.');
+  const resolved = resolveStoredPath(target);
 
   let dirents;
   try {

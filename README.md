@@ -128,6 +128,9 @@ npm run dev
 定義は `data/agents/` 配下の 2 ファイルに分かれている。
 既定は `data/agents/default.json`（コミット対象・読み取りのみ）、
 画面から追加したぶんは `data/agents/custom.json`（`.gitignore` 済み）に入る。
+追加ウィンドウのモデルは初期状態で「Claude Code のデフォルトに任せる」になっていて、
+そのまま追加すればモデルを固定しないエージェントになる。
+作業ディレクトリの初期値はホーム（`~`）で、「ディレクトリを選ぶ」から辿って変えられる。
 
 ```jsonc
 {
@@ -136,7 +139,7 @@ npm run dev
   "model": "opus",                       // opus / sonnet / haiku またはフル名（省略すると Claude Code のデフォルト）
   "systemPrompt": "…",                   // --append-system-prompt に渡す役割
   "description": "…",
-  "workingDirectory": "../myrepo",        // Claude Code の cwd（相対は本プロジェクトから）
+  "workingDirectory": "../myrepo",        // Claude Code の cwd（相対は本プロジェクトから、~ はホーム）
   "permissionMode": "bypassPermissions",  // フル権限
   "timeoutMs": 600000
 }

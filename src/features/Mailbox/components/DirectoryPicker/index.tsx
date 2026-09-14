@@ -123,7 +123,7 @@ export const DirectoryPicker = ({
             キャンセル
           </button>
           <span className={styles.footerHint}>
-            プロジェクト配下なら相対パスで保存します
+            プロジェクト配下は相対パス、ホーム配下は <code>~</code> で保存します
           </span>
         </footer>
       </div>

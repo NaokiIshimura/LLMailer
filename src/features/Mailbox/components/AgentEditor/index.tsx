@@ -46,7 +46,11 @@ export const AgentEditor = ({
     isCustomModel(form.model)
   );
   const isNew = form.editing === null;
-  const canSave = form.name.trim() !== '' && form.model.trim() !== '' && !saving;
+  // 「その他」を選んだときだけフル名が要る（候補の「デフォルトに任せる」は空のまま保存する）
+  const canSave =
+    form.name.trim() !== '' &&
+    (!customModel || form.model.trim() !== '') &&
+    !saving;
 
   /** 「その他」を選んだらフル名を入力してもらうため、モデル名は空に戻す */
   const handleModelChange = (value: string): void => {

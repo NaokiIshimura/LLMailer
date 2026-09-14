@@ -1,5 +1,6 @@
 'use client';
 
+import { formatModel } from '@/lib/agents/models';
 import { formatListDate } from '@/lib/format';
 import { isFullAccessAgent, type Agent, type Folder, type Thread } from '@/types/mail';
 import { Icon } from '../Icon';
@@ -172,7 +173,7 @@ export const HomeView = ({
               >
                 <span className={styles.agentName}>{agent.name}</span>
                 <span className={styles.agentMeta}>
-                  {agent.model} ／{' '}
+                  {formatModel(agent.model)} ／{' '}
                   {isFullAccessAgent(agent) ? 'フル権限' : '読み取り専用'}
                 </span>
               </button>

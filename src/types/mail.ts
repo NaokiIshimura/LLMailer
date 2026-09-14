@@ -37,8 +37,11 @@ export interface Agent {
    */
   readonly id: string;
   readonly name: string;
-  /** Claude Code のモデル指定（'opus' / 'sonnet' / 'haiku' またはフル名） */
-  readonly model: string;
+  /**
+   * Claude Code のモデル指定（'opus' / 'sonnet' / 'haiku' またはフル名）。
+   * 省略すると --model を渡さず、Claude Code 側のデフォルトに任せる。
+   */
+  readonly model?: string;
   readonly systemPrompt?: string;
   readonly description?: string;
   /** Claude Code の作業ディレクトリ。相対パスは LLMailer プロジェクトからの相対 */

@@ -1,5 +1,6 @@
 'use client';
 
+import { formatModel } from '@/lib/agents/models';
 import {
   isFullAccessAgent,
   type Agent,
@@ -96,7 +97,7 @@ export const ContactView = ({
           <tbody>
             <tr>
               <th>モデル</th>
-              <td className={styles.mono}>{agent.model}</td>
+              <td className={styles.mono}>{formatModel(agent.model)}</td>
             </tr>
             <tr>
               <th>作業ディレクトリ</th>
